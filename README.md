@@ -1,3 +1,87 @@
+# Machine à Nombres 🧠
+
+Une application éducative interactive pour apprendre les nombres et le système décimal aux enfants.
+
+## 🎯 Objectif Pédagogique
+
+Cette application enseigne progressivement :
+- Le concept de **ZÉRO** (l'absence de quantité)
+- Les nombres de **1 à 9** avec une association visuelle (jetons et doigts)
+- Le système décimal et la règle d'échange **10 pour 1**
+- La manipulation de nombres jusqu'à 9999
+
+## 🚀 Déploiement
+
+L'application est automatiquement déployée sur GitHub Pages à chaque push sur la branche `master`.
+
+**URL de l'application :** `https://armelgeek.github.io/game/`
+
+### Configuration du Déploiement
+
+Le déploiement est géré par GitHub Actions (voir `.github/workflows/deploy.yml`). Pour activer le déploiement :
+
+1. Aller dans les paramètres du repository GitHub
+2. Naviguer vers **Pages** dans le menu latéral
+3. Dans **Source**, sélectionner **GitHub Actions**
+4. Le workflow se déclenchera automatiquement à chaque push
+
+## 💻 Développement Local
+
+### Prérequis
+- Node.js 20 ou supérieur
+- npm
+
+### Installation
+
+```bash
+npm install
+```
+
+### Lancer en mode développement
+
+```bash
+npm run dev
+```
+
+### Build de production
+
+```bash
+npm run build
+```
+
+### Prévisualiser le build
+
+```bash
+npm run preview
+```
+
+### Linter
+
+```bash
+npm run lint
+```
+
+## 📚 Structure Pédagogique
+
+L'application suit un parcours d'apprentissage progressif :
+
+1. **Phase Exploration** (explore-units) : Découverte de ZÉRO, UN, DEUX, TROIS
+2. **Phase Pratique** (click-add) : Entraînement jusqu'à SIX
+3. **Phase Soustraction** (click-remove) : Retour à ZÉRO
+4. **Phase Apprentissage** (learn-units) : Comptage automatique de 1 à 9
+5. **Phase Défi** (challenge-learn-unit) : Validation des acquis
+6. **Phase Échange** (learn-carry) : Découverte de l'échange 10 pour 1
+7. **Mode Libre** (normal) : Manipulation libre des nombres
+
+## 🛠️ Technologies Utilisées
+
+- React 19
+- TypeScript
+- Vite
+- GitHub Actions pour le déploiement
+
+---
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
