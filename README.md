@@ -65,6 +65,7 @@ npm run lint
 
 L'application suit un parcours d'apprentissage progressif :
 
+0. **Phase Tutoriel** (tutorial) : Prise en main de l'interface (boutons VERT et ROUGE) sans concept de nombre
 1. **Phase Exploration** (explore-units) : Découverte de ZÉRO, UN, DEUX, TROIS
 2. **Phase Pratique** (click-add) : Entraînement jusqu'à SIX
 3. **Phase Soustraction** (click-remove) : Retour à ZÉRO
