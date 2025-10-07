@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 // --- Types et Constantes ---
 interface Column {
@@ -238,7 +238,7 @@ function MachineANombres() {
     // Mise à jour de l'état si l'on est dans un cas général
     else {
         setColumns(newCols);
-        if(phase !== 'learn-carry' && phase !== 'challenge-learn-unit' && phase !== 'explore-units' && phase !== 'click-add') {
+        if(phase === 'normal' || phase === 'done' || phase === 'learn-units') {
              setPointInfo(`Il y a maintenant ${newCols[idx].value} point${newCols[idx].value > 1 ? 's' : ''} dans la colonne ${newCols[idx].name}.`);
         }
     }
@@ -265,7 +265,7 @@ function MachineANombres() {
     }
     
     const newCols = [...columns];
-    let tempTotalBefore = totalNumber;
+    const tempTotalBefore = totalNumber;
     let hasBorrow = false;
 
 
