@@ -31,9 +31,8 @@ function MachineANombres() {
   // addClicks sert maintenant à suivre la progression dans explore-units
   const [addClicks, setAddClicks] = useState(0); 
   const [feedback, setFeedback] = useState("Bienvenue dans la Machine à Nombres ! 👋 Avant d'apprendre ce qu'est un nombre, je vais te montrer comment utiliser cette machine.");
-  const [typedFeedback, setTypedFeedback] = useState("");
-  const [typedInstruction, setTypedInstruction] = useState("");
   const [pointInfo, setPointInfo] = useState("Regarde les boutons sous la colonne 'Unités'. Le bouton VERT (△) ajoute, le bouton ROUGE (∇) enlève.");
+  const [typedText, setTypedText] = useState("");
   
   // État pour l'auto-incrémentation
   const [isCountingAutomatically, setIsCountingAutomatically] = useState(false);
@@ -480,33 +479,28 @@ function MachineANombres() {
     }
   }, [phase]);
 
-  // Gestion de l'effet de frappe pour l'instruction
-  useEffect(() => {
-    let i = 0;
-    setTypedInstruction("");
-    const timer = setInterval(() => {
-      i++;
-      setTypedInstruction(instruction.slice(0, i));
-      if (i >= instruction.length) clearInterval(timer);
-    }, TYPING_SPEED);
-    return () => clearInterval(timer);
-  }, [instruction]);
+  // Texte combiné pour l'affichage unifié
+  const combinedText = useMemo(() => {
+    const parts: string[] = [];
+    
+    if (instruction) parts.push(instruction);
+    if (feedback) parts.push(`✨ ${feedback}`);
+    if (pointInfo) parts.push(`💡 ${pointInfo}`);
+    
+    return parts.join('\n\n');
+  }, [instruction, feedback, pointInfo]);
 
-  // Gestion de l'effet de frappe pour le feedback
+  // Gestion de l'effet de frappe unifié
   useEffect(() => {
-    if (!feedback) {
-      setTypedFeedback("");
-      return;
-    }
     let i = 0;
-    setTypedFeedback("");
+    setTypedText("");
     const timer = setInterval(() => {
       i++;
-      setTypedFeedback(feedback.slice(0, i));
-      if (i >= feedback.length) clearInterval(timer);
+      setTypedText(combinedText.slice(0, i));
+      if (i >= combinedText.length) clearInterval(timer);
     }, TYPING_SPEED);
     return () => clearInterval(timer);
-  }, [feedback]);
+  }, [combinedText]);
 
   const allColumnsUnlocked = columns.every(col => col.unlocked);
   const showUnlockButton = phase === 'normal' && !allColumnsUnlocked;
@@ -792,43 +786,55 @@ function MachineANombres() {
           </div>
         )}
         
+        {/* CARTE UNIQUE POUR TOUS LES TEXTES */}
         <div style={{ 
           fontSize: 15, 
-          minHeight: 48, 
+          minHeight: 120, 
           color: '#1e293b',
-          lineHeight: 1.5
+          lineHeight: 1.6,
+          background: 'linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%)',
+          padding: 16,
+          borderRadius: 12,
+          border: '3px solid rgba(251, 191, 36, 0.3)',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07), inset 0 2px 4px rgba(255, 255, 255, 0.9)',
+          whiteSpace: 'pre-wrap',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          {typedInstruction}
+          {/* Effet de brillance */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '40%',
+            background: 'linear-gradient(to bottom, rgba(255,255,255,0.4), transparent)',
+            pointerEvents: 'none'
+          }}></div>
+          
+          {/* Curseur clignotant */}
+          <style>{`
+            @keyframes blink {
+              0%, 49% { opacity: 1; }
+              50%, 100% { opacity: 0; }
+            }
+          `}</style>
+          
+          <span style={{ position: 'relative', zIndex: 1 }}>
+            {typedText}
+            {typedText.length < combinedText.length && (
+              <span style={{
+                display: 'inline-block',
+                width: 2,
+                height: '1em',
+                backgroundColor: '#f59e0b',
+                marginLeft: 2,
+                animation: 'blink 1s infinite',
+                verticalAlign: 'text-bottom'
+              }}></span>
+            )}
+          </span>
         </div>
-        
-        {typedFeedback && (
-          <div style={{ 
-            color: '#16a34a', 
-            fontWeight: 'bold', 
-            fontSize: 15, 
-            minHeight: 24,
-            background: '#f0fdf4',
-            padding: 10,
-            borderRadius: 8,
-            border: '2px solid #86efac'
-          }}>
-            {typedFeedback}
-          </div>
-        )}
-        
-        {pointInfo && (
-          <div style={{ 
-            fontSize: 14, 
-            color: '#334155', 
-            background: '#fff', 
-            borderRadius: 8, 
-            padding: 12,
-            border: '2px solid #cbd5e1',
-            lineHeight: 1.5
-          }}>
-            {pointInfo}
-          </div>
-        )}
       </div>
     </div>
   );
