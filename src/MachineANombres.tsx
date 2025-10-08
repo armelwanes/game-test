@@ -31,7 +31,6 @@ function MachineANombres() {
   // addClicks sert maintenant à suivre la progression dans explore-units
   const [addClicks, setAddClicks] = useState(0); 
   const [feedback, setFeedback] = useState("Bienvenue dans la Machine à Nombres ! 👋 Avant d'apprendre ce qu'est un nombre, je vais te montrer comment utiliser cette machine.");
-  const [pointInfo, setPointInfo] = useState("Regarde les boutons sous la colonne 'Unités'. Le bouton VERT (△) ajoute, le bouton ROUGE (∇) enlève.");
   const [typedText, setTypedText] = useState("");
   
   // État pour l'auto-incrémentation
@@ -43,6 +42,17 @@ function MachineANombres() {
   );
 
   const isUnitsColumn = useCallback((idx: number) => idx === 0, []);
+
+  // Helper: affiche un message puis un second message après un délai
+  const sequenceFeedback = useCallback((first: string, second: string, delay = FEEDBACK_DELAY) => {
+    setFeedback(first);
+    setTimeout(() => setFeedback(second), delay);
+  }, []);
+
+  // Contrôle l'apparition du feedback après l'instruction (pour éviter l'affichage simultané)
+  const [showFeedbackInCombined, setShowFeedbackInCombined] = useState(false);
+
+  // (L'effet qui surveille `instruction` est placé plus bas, après sa déclaration)
 
 
   // 🚀 EFFECT : Gère l'auto-comptage (0 -> 9) avec commentaires détaillés
@@ -92,7 +102,7 @@ function MachineANombres() {
               infoMessage = "**Attention !** Le nombre **NEUF** (9). La colonne est presque pleine ! C'est comme si on avait levé **tous nos doigts sauf un** !";
           }
 
-          setPointInfo(infoMessage);
+          setFeedback(infoMessage);
 
         }, speed);
 
@@ -109,14 +119,13 @@ function MachineANombres() {
             const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
             setColumns(resetCols); 
 
-            setPointInfo("Retour à zéro. La colonne des Unités est vide, mais celle des Dizaines est prête !");
+            setFeedback("Retour à zéro. La colonne des Unités est vide, mais celle des Dizaines est prête !");
             setIsCountingAutomatically(false); 
             
             // Lancement du défi manuel
             setTimeout(() => {
                 setPhase('challenge-learn-unit');
                 setFeedback(`DÉFI : Utilise les boutons pour afficher à nouveau le chiffre **${CHALLENGE_LEARN_GOAL}** aux Unités.`);
-                setPointInfo(`Objectif : Afficher **${CHALLENGE_LEARN_GOAL}** aux unités, puis **VALIDER** !`);
             }, FEEDBACK_DELAY);
 
         }, COUNT_SPEED * 3); 
@@ -163,15 +172,15 @@ function MachineANombres() {
     if (phase === 'tutorial') {
         const unitsValue = newCols[0].value;
         
-        if (unitsValue === 1) {
-            setFeedback("Bien joué ! 👍 Tu as cliqué sur le bouton VERT ! Un petit point bleu est apparu. C'est comme ça qu'on ajoute des points à la machine.");
-            setPointInfo("Tu vois le petit rond bleu ? Chaque fois que tu cliques sur △, un rond s'allume !");
+    if (unitsValue === 1) {
+      sequenceFeedback("Bien joué ! 👍 Tu as cliqué sur le bouton VERT ! Un petit point bleu est apparu. C'est comme ça qu'on ajoute des points à la machine.",
+               "Tu vois le petit rond bleu ? Chaque fois que tu cliques sur △, un rond s'allume !");
         } else if (unitsValue === 2) {
-            setFeedback("Excellent ! 🎉 Tu as cliqué encore une fois ! Maintenant il y a deux ronds bleus. Tu commences à comprendre comment la machine fonctionne !");
-            setPointInfo("Deux ronds bleus maintenant ! Continue à cliquer sur △ pour voir ce qui se passe.");
+      sequenceFeedback("Excellent ! 🎉 Tu as cliqué encore une fois ! Maintenant il y a deux ronds bleus. Tu commences à comprendre comment la machine fonctionne !",
+               "Deux ronds bleus maintenant ! Continue à cliquer sur △ pour voir ce qui se passe.");
         } else if (unitsValue === 3) {
-            setFeedback("Parfait ! 🌟 Maintenant, essaie le bouton ROUGE (∇) pour voir ce qu'il fait. Clique sur le bouton ROUGE !");
-            setPointInfo("Le bouton ROUGE fait l'inverse du VERT. Essaie-le pour découvrir son effet !");
+      sequenceFeedback("Parfait ! 🌟 Maintenant, essaie le bouton ROUGE (∇) pour voir ce qu'il fait. Clique sur le bouton ROUGE !",
+               "Le bouton ROUGE fait l'inverse du VERT. Essaie-le pour découvrir son effet !");
         } else if (unitsValue > 3) {
             // Limiter à 3 dans le tutoriel
             newCols[0].value = 3;
@@ -186,15 +195,15 @@ function MachineANombres() {
     else if (phase === 'explore-units') {
         const unitsValue = newCols[0].value;
 
-        if (unitsValue === 1) {
-             setFeedback("VOILÀ ! **Répète : UN !** Tu es passé de ZÉRO (rien) à UN. Tu as un jeton, lève UN doigt. C'est le nombre **1** ! 👆");
-             setPointInfo(`Le nombre **${unitsValue}** représente UNE chose.`);
+     if (unitsValue === 1) {
+       sequenceFeedback("VOILÀ ! **Répète : UN !** Tu es passé de ZÉRO (rien) à UN. Tu as un jeton, lève UN doigt. C'est le nombre **1** ! 👆",
+            `Le nombre **${unitsValue}** représente UNE chose.`);
         } else if (unitsValue === 2) {
-             setFeedback("Super ! **Répète : DEUX !** Tu as maintenant DEUX jetons, lève DEUX doigts. C'est le nombre **2** ! ✌️");
-             setPointInfo(`Le nombre **${unitsValue}** représente DEUX choses.`);
+       sequenceFeedback("Super ! **Répète : DEUX !** Tu as maintenant DEUX jetons, lève DEUX doigts. C'est le nombre **2** ! ✌️",
+            `Le nombre **${unitsValue}** représente DEUX choses.`);
         } else if (unitsValue === 3) {
-             setFeedback("Génial ! **Répète : TROIS !** Tu as TROIS jetons, trois doigts levés. Tu comprends maintenant qu'un **NOMBRE** représente une **QUANTITÉ** de choses !");
-             setPointInfo(`Le nombre **${unitsValue}** représente TROIS choses.`);
+       sequenceFeedback("Génial ! **Répète : TROIS !** Tu as TROIS jetons, trois doigts levés. Tu comprends maintenant qu'un **NOMBRE** représente une **QUANTITÉ** de choses !",
+            `Le nombre **${unitsValue}** représente TROIS choses.`);
              
              // Transition vers la phase de pratique
              setTimeout(() => {
@@ -231,16 +240,17 @@ function MachineANombres() {
       
       setAddClicks(nextClick);
 
-      if (newCols[idx].value === 6) {
-        setFeedback("Super ! Tu as atteint **6** jetons. C'est six doigts levés (une main entière + un doigt) !");
-      } else if (newCols[idx].value === 4) {
-         setFeedback(`**QUATRE** ! Le nombre **${newCols[idx].value}**. Continue à ajouter un jeton à chaque fois !`);
-      } else if (newCols[idx].value === 5) {
-         setFeedback(`**CINQ** ! Tous les doigts d'une main ! ✋ Continue !`);
-      } else {
-         setFeedback(`Le nombre est maintenant **${newCols[idx].value}**. Continue à ajouter un jeton à la fois !`);
-      }
-      setPointInfo(`Tu as maintenant ${newCols[idx].value} jetons. **${newCols[idx].value} doigts** levés.`);
+    if (newCols[idx].value === 6) {
+      setFeedback("Super ! Tu as atteint **6** jetons. C'est six doigts levés (une main entière + un doigt) !");
+    } else if (newCols[idx].value === 4) {
+      setFeedback(`**QUATRE** ! Le nombre **${newCols[idx].value}**. Continue à ajouter un jeton à chaque fois !`);
+    } else if (newCols[idx].value === 5) {
+      setFeedback(`**CINQ** ! Tous les doigts d'une main ! ✋ Continue !`);
+    } else {
+      setFeedback(`Le nombre est maintenant **${newCols[idx].value}**. Continue à ajouter un jeton à la fois !`);
+    }
+    // Rappel synthétique après un court délai
+    setTimeout(() => setFeedback(`Tu as maintenant ${newCols[idx].value} jetons. **${newCols[idx].value} doigts** levés.`), FEEDBACK_DELAY);
       setColumns(newCols); 
 
     }
@@ -252,22 +262,23 @@ function MachineANombres() {
     }
 
     // E. learn-carry
-    else if (phase === 'learn-carry' && hasCarry) {
-        setFeedback("INCROYABLE ! Dix unités sont devenues un seul point dans la colonne des Dizaines !");
-        setPointInfo("C'est la règle d'or : 10 dans une colonne donne 1 à la colonne suivante.");
+  else if (phase === 'learn-carry' && hasCarry) {
+    sequenceFeedback("INCROYABLE ! Dix unités sont devenues un seul point dans la colonne des Dizaines !",
+             "C'est la règle d'or : 10 dans une colonne donne 1 à la colonne suivante.");
         
         // Transition vers le jeu libre
-        setTimeout(() => {
-            setPhase('normal');
-            setFeedback("APPRENTISSAGE TERMINÉ ! Tu peux désormais utiliser les Unités et les Dizaines librement.");
-            setPointInfo("Utilise le bouton 'Débloquer la colonne suivante' pour continuer l'aventure !");
-        }, FEEDBACK_DELAY * 2);
+      setTimeout(() => {
+      setPhase('normal');
+      sequenceFeedback("APPRENTISSAGE TERMINÉ ! Tu peux désormais utiliser les Unités et les Dizaines librement.",
+               "Utilise le bouton 'Débloquer la colonne suivante' pour continuer l'aventure !",
+               FEEDBACK_DELAY / 1.5);
+    }, FEEDBACK_DELAY * 2);
         setColumns(newCols); 
     }
 
     // F. Feedback en mode normal
     else if (phase === 'normal' && hasCarry) {
-         setPointInfo("Échange ! 10 points sont passés dans la colonne de gauche. Le système décimal est magique !");
+         setFeedback("Échange ! 10 points sont passés dans la colonne de gauche. Le système décimal est magique !");
          setColumns(newCols); 
     }
     
@@ -275,7 +286,7 @@ function MachineANombres() {
     else {
         setColumns(newCols);
         if(phase === 'normal' || phase === 'done' || phase === 'learn-units') {
-             setPointInfo(`Il y a maintenant ${newCols[idx].value} point${newCols[idx].value > 1 ? 's' : ''} dans la colonne ${newCols[idx].name}.`);
+             setFeedback(`Il y a maintenant ${newCols[idx].value} point${newCols[idx].value > 1 ? 's' : ''} dans la colonne ${newCols[idx].name}.`);
         }
     }
 
@@ -297,7 +308,7 @@ function MachineANombres() {
     
     if (totalNumber <= 0) {
       setFeedback("C'est **ZÉRO** (0) ! Il n'y a plus rien. On ne peut pas descendre plus bas que ZÉRO.");
-      setPointInfo("ZÉRO signifie qu'il n'y a aucun jeton, aucune quantité.");
+  setFeedback("ZÉRO signifie qu'il n'y a aucun jeton, aucune quantité.");
       return;
     }
     
@@ -330,7 +341,7 @@ function MachineANombres() {
         setColumns(newCols);
         
         if (phase !== 'click-remove' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'challenge-learn-unit') {
-             setPointInfo(`Il y a maintenant ${newCols[idx].value} point${newCols[idx].value > 1 ? 's' : ''} dans la colonne ${newCols[idx].name}.`);
+        setFeedback(`Il y a maintenant ${newCols[idx].value} point${newCols[idx].value > 1 ? 's' : ''} dans la colonne ${newCols[idx].name}.`);
         }
     }
 
@@ -343,23 +354,23 @@ function MachineANombres() {
         
         if (unitsValue === 2) {
             setFeedback("Super ! 😊 Le bouton ROUGE enlève un point bleu ! Tu vois, il y en a maintenant deux au lieu de trois.");
-            setPointInfo("Le bouton VERT ajoute, le bouton ROUGE enlève. C'est facile !");
+            setFeedback("Le bouton VERT ajoute, le bouton ROUGE enlève. C'est facile !");
         } else if (unitsValue === 1) {
             setFeedback("Bravo ! 🎉 Clique encore sur le bouton ROUGE pour tout enlever !");
-            setPointInfo("Plus qu'un seul rond bleu ! Continue à enlever...");
+            setFeedback("Plus qu'un seul rond bleu ! Continue à enlever...");
         } else if (unitsValue === 0 && tempTotalBefore === 1) {
             setFeedback("Excellent ! ✨ Tu maîtrises les boutons ! Tous les ronds ont disparu. Maintenant, je vais t'apprendre ce qu'est un **NOMBRE** !");
-            setPointInfo("Tu as compris comment fonctionne la machine ! Prêt pour la suite ?");
+            setFeedback("Tu as compris comment fonctionne la machine ! Prêt pour la suite ?");
             
             // Transition vers explore-units après un délai
             setTimeout(() => {
                 setPhase('explore-units');
                 setFeedback("Bienvenue ! 👋 Je vais t'apprendre ce qu'est un **NOMBRE**. Un nombre, c'est une façon de compter des choses. Regarde, tu as **zéro jeton** pour commencer (rien du tout). Prêt à apprendre ?");
-                setPointInfo("Tu vois la case vide ? C'est **ZÉRO** (0). Zéro signifie qu'il n'y a RIEN, aucun jeton, aucun doigt levé.");
+              setFeedback("Tu vois la case vide ? C'est **ZÉRO** (0). Zéro signifie qu'il n'y a RIEN, aucun jeton, aucun doigt levé.");
             }, FEEDBACK_DELAY * 2);
         } else if (unitsValue > 0) {
             setFeedback(`Bien ! Continue à cliquer sur le bouton ROUGE pour enlever les ronds bleus un par un.`);
-            setPointInfo("Le bouton ROUGE enlève un rond à chaque fois que tu cliques dessus.");
+            setFeedback("Le bouton ROUGE enlève un rond à chaque fois que tu cliques dessus.");
         }
     }
     
@@ -373,19 +384,19 @@ function MachineANombres() {
       const unitsValue = newCols[0].value;
       
       if (unitsValue === 5) {
-          setPointInfo(`Le nombre est maintenant **${unitsValue}** (CINQ) ! Une main entière ! ✋`);
+          setFeedback(`Le nombre est maintenant **${unitsValue}** (CINQ) ! Une main entière ! ✋`);
           setFeedback(`Bien ! Tu as retiré un jeton. Continue à enlever un par un !`);
       } else if (unitsValue === 3) {
-          setPointInfo(`Le nombre est maintenant **${unitsValue}** (TROIS) ! Tu te souviens ?`);
+          setFeedback(`Le nombre est maintenant **${unitsValue}** (TROIS) ! Tu te souviens ?`);
           setFeedback(`Bien ! Continue à descendre vers ZÉRO !`);
       } else if (unitsValue === 2) {
-          setPointInfo(`Le nombre est maintenant **${unitsValue}** (DEUX) ! Deux doigts levés ✌️`);
+          setFeedback(`Le nombre est maintenant **${unitsValue}** (DEUX) ! Deux doigts levés ✌️`);
           setFeedback(`Bien ! Encore un peu et on arrive à ZÉRO !`);
       } else if (unitsValue === 1) {
-          setPointInfo(`Le nombre est maintenant **${unitsValue}** (UN) ! Un seul doigt 👆`);
+          setFeedback(`Le nombre est maintenant **${unitsValue}** (UN) ! Un seul doigt 👆`);
           setFeedback(`Presque à ZÉRO ! Un dernier clic !`);
       } else if (unitsValue === 0 && tempTotalBefore === 1) { 
-        setPointInfo("**ZÉRO** (0) : plus rien ! Aucun jeton, aucun doigt levé !");
+  setFeedback("**ZÉRO** (0) : plus rien ! Aucun jeton, aucun doigt levé !");
         setFeedback("Fantastique ! Le compteur est revenu à **ZÉRO (0)** ! Tu comprends maintenant ce que veut dire compter et revenir à rien !");
         
         // Transition vers la phase 'done'
@@ -394,14 +405,14 @@ function MachineANombres() {
           setFeedback("Félicitations ! Tu maîtrises les nombres de 0 à 6. Clique sur 'Commencer l'apprentissage' pour découvrir l'échange 10 pour 1 !");
         }, FEEDBACK_DELAY);
       } else if (unitsValue > 0) {
-          setPointInfo(`Le nombre est maintenant **${unitsValue}** ! Baisse un doigt !`);
+          setFeedback(`Le nombre est maintenant **${unitsValue}** ! Baisse un doigt !`);
           setFeedback(`Bien ! Tu as retiré un jeton. Il te reste **${unitsValue} doigts levés**.`);
       }
     }
     
     // D. Feedback sur l'emprunt en mode normal
     if (phase === 'normal' && hasBorrow) {
-      setPointInfo("Emprunt ! Nous avons dû prendre à la colonne de gauche et laisser 9 ici. C'est le principe de la soustraction !");
+  setFeedback("Emprunt ! Nous avons dû prendre à la colonne de gauche et laisser 9 ici. C'est le principe de la soustraction !");
     }
   }, [columns, phase, isUnitsColumn, totalNumber, isCountingAutomatically]);
 
@@ -415,8 +426,11 @@ function MachineANombres() {
         // Transition vers la phase 'learn-carry'
         setTimeout(() => {
           setPhase('learn-carry');
+          // Afficher un premier message, puis un rappel après un court délai
           setFeedback("Prêt ? Clique sur le bouton VERT (△) pour faire le dernier pas et forcer la machine à faire l'échange !");
-          setPointInfo("Tu dois maintenant cliquer sur △ pour forcer l'échange 10 pour 1.");
+          setTimeout(() => {
+            setFeedback("Tu dois maintenant cliquer sur △ pour forcer l'échange 10 pour 1.");
+          }, FEEDBACK_DELAY);
         }, FEEDBACK_DELAY);
       } else {
         setFeedback(`Non, il faut afficher ${CHALLENGE_LEARN_GOAL} aux unités. Utilise les deux boutons !`);
@@ -436,7 +450,7 @@ function MachineANombres() {
           setIsCountingAutomatically(true); // DÉCLENCHEMENT DE L'AUTO-COMPTAGE
           
           setFeedback("C'est parti ! Regarde bien la machine compter de 1 à 9 et écoute les commentaires...");
-          setPointInfo("Observe bien le nombre de points qui s'allument à chaque unité.");
+          setFeedback("Observe bien le nombre de points qui s'allument à chaque unité.");
       }
   }, [phase]); 
 
@@ -479,16 +493,13 @@ function MachineANombres() {
     }
   }, [phase]);
 
-  // Texte combiné pour l'affichage unifié
+  // Texte combiné pour l'affichage unifié (instruction + feedback)
   const combinedText = useMemo(() => {
     const parts: string[] = [];
-    
     if (instruction) parts.push(instruction);
-    if (feedback) parts.push(`✨ ${feedback}`);
-    if (pointInfo) parts.push(`💡 ${pointInfo}`);
-    
+    if (showFeedbackInCombined && feedback) parts.push(`✨ ${feedback}`);
     return parts.join('\n\n');
-  }, [instruction, feedback, pointInfo]);
+  }, [instruction, feedback, showFeedbackInCombined]);
 
   // Gestion de l'effet de frappe unifié
   useEffect(() => {
