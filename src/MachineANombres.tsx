@@ -26,6 +26,7 @@ const initialColumns: Column[] = COLUMN_NAMES.map((name, idx) => ({
 }));
 
 function MachineANombres() {
+  // ...existing code...
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [phase, setPhase] = useState<Phase>('tutorial');
   // addClicks sert maintenant à suivre la progression dans explore-units
@@ -35,6 +36,7 @@ function MachineANombres() {
   const [typedFeedback, setTypedFeedback] = useState("");
   const [isTypingInstruction, setIsTypingInstruction] = useState(false);
   const [isTypingFeedback, setIsTypingFeedback] = useState(false);
+  const [pendingAutoCount, setPendingAutoCount] = useState(false);
 
   // État pour l'auto-incrémentation
   const [isCountingAutomatically, setIsCountingAutomatically] = useState(false);
@@ -73,7 +75,6 @@ function MachineANombres() {
 
       // PARTIE A: COMPTAGE LENT (0 à 8) avec commentaires
       if (unitsValue < 9) {
-
         const speed = COUNT_SPEED;
         const nextValue = unitsValue + 1;
 
@@ -86,26 +87,25 @@ function MachineANombres() {
             return newCols;
           });
 
-          let infoMessage = `**${nextValue}** : ${nextValue} bille${nextValue > 1 ? 's' : ''}.`;
-
+          let infoMessage = "";
           if (nextValue === 1) {
-            infoMessage += " UN doigt levé ! 👆";
+            infoMessage = "**1** : une bille. UN doigt ✌️";
           } else if (nextValue === 2) {
-            infoMessage += " DEUX doigts ! ✌️";
+            infoMessage = "**2** : deux billes. DEUX doigts ! ✌️";
           } else if (nextValue === 3) {
-            infoMessage += " TROIS doigts ! 🎈";
+            infoMessage = "**3** : trois billes. TROIS doigts ! 🎈";
           } else if (nextValue === 4) {
-            infoMessage += " QUATRE doigts !";
+            infoMessage = "**4** : quatre billes. QUATRE doigts !";
           } else if (nextValue === 5) {
-            infoMessage += " CINQ ! Tous les doigts d'une main ! ✋";
+            infoMessage = "**5** : cinq billes. CINQ ! Tous les doigts d'une main ! ✋";
           } else if (nextValue === 6) {
-            infoMessage += " SIX doigts !";
+            infoMessage = "**6** : six billes. SIX doigts !";
           } else if (nextValue === 7) {
-            infoMessage += " SEPT doigts !";
+            infoMessage = "**7** : sept billes. SEPT doigts !";
           } else if (nextValue === 8) {
-            infoMessage += " HUIT doigts !";
+            infoMessage = "**8** : huit billes. HUIT doigts !";
           } else if (nextValue === 9) {
-            infoMessage = "**NEUF** (9) 🎯 La colonne est presque pleine ! Plus qu'un espace libre !";
+            infoMessage = "**9** : neuf billes. 🎯 La colonne est presque pleine ! Plus qu'un espace libre !";
           }
 
           setFeedback(infoMessage);
@@ -394,22 +394,24 @@ function MachineANombres() {
           "Plus qu'une bille ! Un dernier clic !"
         );
       } else if (unitsValue === 0 && tempTotalBefore === 1) {
+        // 1. Message d'aventure, puis transition vers phase d'observation
         sequenceFeedback(
           "Extraordinaire ! 🎉 Tu maîtrises les deux boutons ! Je vais t'apprendre les **NOMBRES** !",
           "Prépare-toi pour une grande aventure !"
         );
 
-            // Transition vers un comptage automatique d'introduction avant l'exploration libre
-            setTimeout(() => {
-                setColumns(initialColumns.map(col => ({ ...col })));
-                setNextPhaseAfterAuto('explore-units');
-                setPhase('learn-units');
-                setIsCountingAutomatically(true);
-                sequenceFeedback(
-                  "Bienvenue dans le monde des NOMBRES ! ✨ Un nombre dit COMBIEN il y a de choses.",
-                  "La machine va compter de 1 à 9. Observe !"
-                );
-            }, FEEDBACK_DELAY * 2);
+        // 2. Après le délai, passer à la phase d'observation, mais NE PAS démarrer le compteur auto tout de suite
+        setTimeout(() => {
+          setColumns(initialColumns.map(col => ({ ...col })));
+          setNextPhaseAfterAuto('explore-units');
+          setPhase('learn-units');
+          setPendingAutoCount(true);
+          // Afficher le message d'observation, le compteur auto démarrera à la fin du typing
+          sequenceFeedback(
+            "Bienvenue dans le monde des NOMBRES ! ✨ Un nombre dit COMBIEN il y a de choses.",
+            "Regarde ! 👀 La machine compte de 1 à 9. Compte avec tes doigts !"
+          );
+        }, FEEDBACK_DELAY * 2);
       } else if (unitsValue > 0) {
         sequenceFeedback(
           `Bien joué ! Continue à cliquer sur ROUGE !`,
@@ -504,7 +506,8 @@ function MachineANombres() {
 
   setNextPhaseAfterAuto('challenge-learn-unit');
   setPhase('learn-units');
-  setIsCountingAutomatically(true); // DÉCLENCHEMENT DE L'AUTO-COMPTAGE
+  setPendingAutoCount(true);
+  setIsCountingAutomatically(false);
 
       sequenceFeedback(
         "C'est parti ! 🎉 La machine va compter de 1 à 9 !",
@@ -645,6 +648,22 @@ function MachineANombres() {
   const displayText = useMemo(() => typedFeedback || typedInstruction, [typedInstruction, typedFeedback]);
 
   const isTyping = isTypingInstruction || isTypingFeedback;
+
+  // --- Démarrage du compteur auto après le texte d'observation ---
+  useEffect(() => {
+    // On veut démarrer le comptage auto uniquement après la phase 'learn-units',
+    // lorsque toutes les animations de texte sont terminées
+    if (
+      phase === 'learn-units' &&
+      pendingAutoCount &&
+      !isCountingAutomatically &&
+      !isTypingInstruction &&
+      !isTypingFeedback
+    ) {
+      setIsCountingAutomatically(true);
+      setPendingAutoCount(false);
+    }
+  }, [phase, pendingAutoCount, isCountingAutomatically, isTypingInstruction, isTypingFeedback]);
 
   const allColumnsUnlocked = columns.every(col => col.unlocked);
   const showUnlockButton = phase === 'normal' && !allColumnsUnlocked;
