@@ -37,6 +37,7 @@ function MachineANombres() {
   const [isTypingInstruction, setIsTypingInstruction] = useState(false);
   const [isTypingFeedback, setIsTypingFeedback] = useState(false);
   const [pendingAutoCount, setPendingAutoCount] = useState(false);
+  const [isTransitioningToChallenge, setIsTransitioningToChallenge] = useState(false);
 
   // État pour l'auto-incrémentation
   const [isCountingAutomatically, setIsCountingAutomatically] = useState(false);
@@ -160,8 +161,8 @@ function MachineANombres() {
   // --- LOGIQUE AJOUTER (HANDLE ADD) ---
   const handleAdd = useCallback((idx: number) => {
 
-    // Blocage du clic manuel pendant l'auto-comptage
-    if (isCountingAutomatically) return;
+  // Blocage du clic manuel pendant l'auto-comptage ou la transition vers le défi
+  if (isCountingAutomatically || isTransitioningToChallenge) return;
 
     // Restrictions générales
     if (phase !== 'normal' && !isUnitsColumn(idx) && phase !== 'learn-carry' && phase !== 'challenge-learn-unit' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'click-add') {
@@ -243,9 +244,10 @@ function MachineANombres() {
     // C. click-add (Pratique de 4 à 9)
     else if (phase === 'click-add') {
       const nextClick = addClicks + 1;
+      const nextValue = newCols[idx].value;
 
       // Blocage si l'on dépasse le nombre de clics requis (total = 9)
-      if (newCols[idx].value > 9) {
+      if (nextValue > 9) {
         newCols[idx].value = 9;
         setFeedback("Parfait ! 🎉 Tu as atteint 9 ! Maintenant clique sur ∇ pour descendre à zéro !");
         setColumns(newCols);
@@ -258,17 +260,37 @@ function MachineANombres() {
         return;
       }
 
+      if (nextValue === 9) {
+        setIsTransitioningToChallenge(true);
+        setAddClicks(nextClick);
+        setColumns(newCols);
+
+        sequenceFeedback(
+          "Magnifique ! 🎉 Tu as atteint 9 !",
+          "Tu es prêt pour l'évaluation !"
+        );
+
+        setTimeout(() => {
+          const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+          setColumns(resetCols);
+          setAddClicks(0);
+          setPhase('challenge-learn-unit');
+          setFeedback(`DÉFI : Affiche le nombre **${CHALLENGE_LEARN_GOAL}** avec les boutons, puis clique sur VALIDER !`);
+          setIsTransitioningToChallenge(false);
+        }, FEEDBACK_DELAY * 2);
+
+        return;
+      }
+
       setAddClicks(nextClick);
 
-      if (newCols[idx].value === 9) {
-        setFeedback("Magnifique ! 🎉 Tu as atteint 9 ! Continue ou attends le signal !");
-      } else if (newCols[idx].value >= 4 && newCols[idx].value <= 8) {
-        setFeedback(`**${newCols[idx].value}** ! Continue avec △ !`);
+      if (nextValue >= 4 && nextValue <= 8) {
+        setFeedback(`**${nextValue}** ! Continue avec △ !`);
       } else {
-        setFeedback(`Maintenant **${newCols[idx].value}** ! Clique sur △ !`);
+        setFeedback(`Maintenant **${nextValue}** ! Clique sur △ !`);
       }
       // Rappel synthétique après un court délai
-      setTimeout(() => setFeedback(`${newCols[idx].value} billes. Continue avec △ !`), FEEDBACK_DELAY);
+      setTimeout(() => setFeedback(`${nextValue} billes. Continue avec △ !`), FEEDBACK_DELAY);
       setColumns(newCols);
 
     }
@@ -320,7 +342,7 @@ function MachineANombres() {
     }
 
 
-  }, [columns, phase, addClicks, isUnitsColumn, totalNumber, isCountingAutomatically, sequenceFeedback]);
+  }, [columns, phase, addClicks, isUnitsColumn, totalNumber, isCountingAutomatically, isTransitioningToChallenge, sequenceFeedback]);
 
 
   // --- LOGIQUE SOUSTRAIRE (HANDLE SUBTRACT) ---
