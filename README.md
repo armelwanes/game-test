@@ -10,6 +10,8 @@ Cette application enseigne progressivement :
 - Le système décimal et la règle d'échange **10 pour 1**
 - La manipulation de nombres jusqu'à 9999
 
+> 📖 Pour une description détaillée du concept pédagogique et des activités d'apprentissage, consultez le document [CONCEPT.md](CONCEPT.md)
+
 ## 🚀 Déploiement
 
 L'application est automatiquement déployée sur GitHub Pages à chaque push sur la branche `master`.
