@@ -17,7 +17,7 @@ const MESSAGE_READ_DELAY = 3000;
 // Vitesse de l'auto-incrémentation ralentie pour le commentaire
 const COUNT_SPEED = 1800;
 const FEEDBACK_DELAY = 1200;
-const CHALLENGE_LEARN_GOAL = 5;
+const CHALLENGE_LEARN_GOAL = 9;
 
 const initialColumns: Column[] = COLUMN_NAMES.map((name, idx) => ({
   name,
@@ -86,28 +86,26 @@ function MachineANombres() {
             return newCols;
           });
 
-          let infoMessage = `Le nombre **${nextValue}** : ${nextValue} bille${nextValue > 1 ? 's' : ''}.`;
+          let infoMessage = `**${nextValue}** : ${nextValue} bille${nextValue > 1 ? 's' : ''}.`;
 
-          if (nextValue === 0) {
-            infoMessage = "**ZÉRO** (0) : aucune bille, aucun doigt levé. C'est le début du comptage, le point de départ de ton aventure !  Continue à regarder la machine et dis 'zéro' à voix haute !";
-          } else if (nextValue === 1) {
-            infoMessage += " UN seul bille, UN seul doigt levé ! C'est le début de tout ! 👆 Continue à regarder la colonne et prépare-toi à annoncer 'deux' quand la prochaine bille arrive !";
+          if (nextValue === 1) {
+            infoMessage += " UN doigt levé ! 👆";
           } else if (nextValue === 2) {
-            infoMessage += " DEUX billes, DEUX doigts levés ! Comme une paire ! ✌️ Reste attentif et annonce 'trois' dès que la prochaine bille s'allume !";
+            infoMessage += " DEUX doigts ! ✌️";
           } else if (nextValue === 3) {
-            infoMessage += " TROIS billes, TROIS doigts. Tu connais déjà bien ce nombre maintenant ! 🎈 Garde les yeux sur la colonne et prépare-toi à dire 'quatre' quand la suivante arrive !";
+            infoMessage += " TROIS doigts ! 🎈";
           } else if (nextValue === 4) {
-            infoMessage += " QUATRE billes, QUATRE doigts levés. Comme les quatre saisons ! Reste concentré et annonce 'cinq' quand tu vois la prochaine bille !";
+            infoMessage += " QUATRE doigts !";
           } else if (nextValue === 5) {
-            infoMessage += " C'est **CINQ**, tous les doigts d'une main ! C'est la moitié de dix ! ✋ Continue à compter avec moi et prépare-toi à dire 'six' à voix haute !";
+            infoMessage += " CINQ ! Tous les doigts d'une main ! ✋";
           } else if (nextValue === 6) {
-            infoMessage += " SIX billes, SIX doigts (une main + un doigt). Tu grandis bien ! Garde ton attention sur la colonne et annonce 'sept' dès que la bille suivante apparaît !";
+            infoMessage += " SIX doigts !";
           } else if (nextValue === 7) {
-            infoMessage += " SEPT billes, SEPT doigts (une main + deux doigts). On se rapproche de dix ! Prépare-toi à dire 'huit' quand la magie continue !";
+            infoMessage += " SEPT doigts !";
           } else if (nextValue === 8) {
-            infoMessage += " HUIT billes, HUIT doigts (une main + trois doigts). Encore un peu ! Reste concentré et annonce 'neuf' quand tu vois la prochaine bille !";
+            infoMessage += " HUIT doigts !";
           } else if (nextValue === 9) {
-            infoMessage = "**Attention champion !** 🎯 Le nombre **NEUF** (9). La colonne est presque pleine ! C'est comme si on avait levé **tous nos doigts sauf un** ! Plus qu'un seul espace libre ! Prépare-toi à découvrir ce qui se passe quand la colonne est remplie !";
+            infoMessage = "**NEUF** (9) 🎯 La colonne est presque pleine ! Plus qu'un espace libre !";
           }
 
           setFeedback(infoMessage);
@@ -119,7 +117,7 @@ function MachineANombres() {
       // PARTIE B: ARRÊT À NEUF (9) et RESET
       else if (unitsValue === 9) {
         // 1. Annonce l'arrêt et l'état "plein"
-        setFeedback("STOP ! 🛑 Le compteur est à 9. La colonne des Unités est **PLEINE** à craquer ! Elle ne peut plus accepter de nouvelles billes ! Attends quelques instants sans cliquer, la machine va te montrer une astuce magique !");
+        setFeedback("STOP ! 🛑 Le compteur est à 9. La colonne est PLEINE ! Attends, la machine va te montrer la suite !");
 
         // 2. Reset et Transition
         timer = setTimeout(() => {
@@ -131,12 +129,12 @@ function MachineANombres() {
             setIsCountingAutomatically(false);
             setNextPhaseAfterAuto(null);
 
-            setFeedback("Retour à zéro ! 🔄 La colonne des Unités est vide maintenant, mais celle des Dizaines est prête à accueillir ses premières billes ! Prépare ton doigt sur le bouton VERT (△) pour remplir la nouvelle colonne !");
+            setFeedback("Retour à zéro ! 🔄 Maintenant, affiche le nombre 9 avec les boutons !");
 
             // Lancement du défi manuel
             setTimeout(() => {
               setPhase('challenge-learn-unit');
-              setFeedback(` DÉFI POUR TOI ! Utilise les boutons VERT et ROUGE pour afficher à nouveau le nombre **${CHALLENGE_LEARN_GOAL}** dans les Unités. Tu es capable !`);
+              setFeedback(` DÉFI : Affiche le nombre **${CHALLENGE_LEARN_GOAL}** avec les boutons, puis clique sur VALIDER !`);
             }, FEEDBACK_DELAY);
           } else {
             setColumns(initialColumns.map(col => ({ ...col })));
@@ -145,8 +143,8 @@ function MachineANombres() {
             setAddClicks(0);
             setPhase(targetPhase);
             sequenceFeedback(
-              "Spectacle terminé ! La machine a compté toute seule de 1 à 9 pour te montrer comment ça marche.",
-              "À toi maintenant ! Clique sur le bouton VERT (△) pour recommencer depuis ZÉRO et créer les nombres avec tes propres doigts !"
+              "Spectacle terminé ! La machine a compté de 1 à 9.",
+              "À toi maintenant ! Clique sur △ pour créer les nombres !"
             );
           }
 
@@ -195,18 +193,18 @@ function MachineANombres() {
       const unitsValue = newCols[0].value;
 
       if (unitsValue === 1) {
-        sequenceFeedback("Bravo champion !   Tu as cliqué sur le bouton VERT ! Regarde : un joli rond bleu est apparu comme par magie !",
-          "Ce petit rond bleu, c'est comme une bille que tu ajoutes dans ta tirelire. Clique encore sur △ pour ajouter une nouvelle bille lumineuse !");
+        sequenceFeedback("Bravo ! 🎉 Tu as cliqué sur le bouton VERT ! Un joli rond bleu est apparu !",
+          "Ce rond bleu, c'est comme une bille. Clique encore sur △ pour en ajouter !");
       } else if (unitsValue === 2) {
-        sequenceFeedback("Super champion !  Tu continues à découvrir la machine ! Maintenant il y a DEUX ronds bleus qui brillent !",
-          "Deux belles billes bleues ! La machine se remplit petit à petit. Continue à cliquer sur △ pour voir la suite !");
+        sequenceFeedback("Super ! 🎉 Maintenant il y a DEUX ronds bleus !",
+          "Deux belles billes ! Continue à cliquer sur △ !");
       } else if (unitsValue === 3) {
-        sequenceFeedback("Magnifique !  Maintenant, essaie le bouton ROUGE (∇) pour découvrir son pouvoir magique. Clique dessus !",
-          "Le bouton ROUGE a un pouvoir spécial : il fait l'inverse du VERT ! Essaie-le vite pour découvrir sa magie !");
+        sequenceFeedback("Magnifique ! 🎉 Essaie le bouton ROUGE (∇) maintenant !",
+          "Le bouton ROUGE fait l'inverse du VERT ! Essaie-le !");
       } else if (unitsValue > 3) {
         // Limiter à 3 dans le tutoriel
         newCols[0].value = 3;
-        setFeedback("Doucement petit explorateur !  Maintenant, clique sur le bouton ROUGE (∇) pour découvrir son pouvoir magique !");
+        setFeedback("Maintenant, clique sur le bouton ROUGE (∇) !");
         setColumns(newCols);
         return;
       }
@@ -218,23 +216,23 @@ function MachineANombres() {
       const unitsValue = newCols[0].value;
 
       if (unitsValue === 1) {
-        sequenceFeedback("HOURRA !  **Dis à haute voix : UN !** Tu viens de passer de ZÉRO à UN. Lève UN doigt et regarde la bille ! 👆",
-          `UN c'est une seule chose : un bonbon, une bille, un sourire ! Clique sur le bouton VERT (△) pour continuer !`);
+        sequenceFeedback("HOURRA ! 🎉 **Dis à haute voix : UN !** Lève UN doigt ! 👆",
+          `UN c'est une seule chose ! Clique sur △ pour continuer !`);
       } else if (unitsValue === 2) {
-        sequenceFeedback("Fantastique !  **Dis à haute voix : DEUX !** Tu as maintenant DEUX billes, lève DEUX doigts ! ✌️",
-          `DEUX, c'est une paire, comme tes deux chaussures ! Clique sur le bouton VERT (△) pour continuer !`);
+        sequenceFeedback("Fantastique ! 🎉 **Dis : DEUX !** Lève DEUX doigts ! ✌️",
+          `DEUX, c'est une paire ! Clique sur △ !`);
       } else if (unitsValue === 3) {
-        sequenceFeedback("Merveilleux !  **Dis à haute voix : TROIS !** Trois billes, trois doigts levés !",
-          `Comme les trois petits cochons ! Clique sur le bouton VERT (△) pour continuer !`);
+        sequenceFeedback("Merveilleux ! 🎉 **Dis : TROIS !** Trois doigts !",
+          `Clique sur △ pour continuer !`);
 
         // Transition vers la phase de pratique
         setTimeout(() => {
           setPhase('click-add');
-          setFeedback("Bravo petit génie !  Continuons l'aventure avec **QUATRE**, **CINQ** et **SIX**. Clique sur le bouton VERT (△) pour continuer à ajouter des billes et devenir un champion des nombres !");
+          setFeedback("Bravo ! Continuons jusqu'à 9 ! Clique sur △ !");
         }, FEEDBACK_DELAY * 1.5);
       } else if (unitsValue > 3) {
         newCols[0].value = 3;
-        setFeedback("Doucement explorateur !  On a bien appris UN, DEUX, TROIS. Reste attentif et clique sur le bouton VERT (△) quand je te dis de continuer la suite de l'aventure !");
+        setFeedback("Attends le signal pour continuer !");
         setColumns(newCols);
         return;
       }
@@ -242,60 +240,66 @@ function MachineANombres() {
 
     }
 
-    // C. click-add (Pratique de 4, 5, 6 - Total de 6)
+    // C. click-add (Pratique de 4 à 9)
     else if (phase === 'click-add') {
       const nextClick = addClicks + 1;
 
-      // Blocage si l'on dépasse le nombre de clics requis (total = 6)
-      if (newCols[idx].value > 6) {
-        newCols[idx].value = 6;
-        setFeedback("Parfait champion !  Tu as atteint **6** billes (SIX) ! C'est une main entière plus un doigt ! Pose ton doigt sur le bouton ROUGE (∇) : on va apprendre à retirer les billes une par une !");
+      // Blocage si l'on dépasse le nombre de clics requis (total = 9)
+      if (newCols[idx].value > 9) {
+        newCols[idx].value = 9;
+        setFeedback("Parfait ! 🎉 Tu as atteint 9 ! Maintenant clique sur ∇ pour descendre à zéro !");
         setColumns(newCols);
 
         // Transition immédiate vers click-remove
         setTimeout(() => {
           setPhase('click-remove');
-          setFeedback("Super travail !  Clique maintenant sur le bouton ROUGE (∇) pour enlever les billes une par une, comme si tu les remettais dans le sac, jusqu'à revenir à **ZÉRO** (plus rien) !");
+          setFeedback("Super ! Clique sur ∇ pour enlever les billes jusqu'à zéro !");
         }, FEEDBACK_DELAY);
         return;
       }
 
       setAddClicks(nextClick);
 
-      if (newCols[idx].value === 6) {
-        setFeedback("Magnifique !  Tu as atteint **6** billes. C'est six doigts levés : une main entière (5 doigts) plus un doigt de l'autre main ! Clique encore sur le bouton VERT (△) si tu veux revoir ce nombre ou attends mon signal pour passer à la suite !");
-      } else if (newCols[idx].value === 4) {
-        setFeedback(`**QUATRE** !  Le nombre **${newCols[idx].value}**. Comme les quatre pattes d'un chat ! Clique encore sur le bouton VERT (△) pour ajouter une nouvelle bille !`);
-      } else if (newCols[idx].value === 5) {
-        setFeedback(`**CINQ** ! ✋ Tous les doigts d'une main levés ! C'est magique ! Continue en cliquant sur le bouton VERT (△) pour voir le nombre suivant !`);
+      if (newCols[idx].value === 9) {
+        setFeedback("Magnifique ! 🎉 Tu as atteint 9 ! Continue ou attends le signal !");
+      } else if (newCols[idx].value >= 4 && newCols[idx].value <= 8) {
+        setFeedback(`**${newCols[idx].value}** ! Continue avec △ !`);
       } else {
-        setFeedback(`Le nombre est maintenant **${newCols[idx].value}**. 🎈 Appuie à nouveau sur le bouton VERT (△) pour continuer à grandir le nombre !`);
+        setFeedback(`Maintenant **${newCols[idx].value}** ! Clique sur △ !`);
       }
       // Rappel synthétique après un court délai
-      setTimeout(() => setFeedback(`Tu as maintenant ${newCols[idx].value} billes. **${newCols[idx].value} doigts** levés. Continue ton aventure en appuyant encore sur le bouton VERT (△) !`), FEEDBACK_DELAY);
+      setTimeout(() => setFeedback(`${newCols[idx].value} billes. Continue avec △ !`), FEEDBACK_DELAY);
       setColumns(newCols);
 
     }
 
     // D. challenge-learn-unit (surveillance du dépassement)
     else if (phase === 'challenge-learn-unit' && newCols[0].value > CHALLENGE_LEARN_GOAL) {
-      setFeedback(`Oups petit champion !  Tu as dépassé ${CHALLENGE_LEARN_GOAL}. Utilise le bouton ROUGE pour revenir pile sur ${CHALLENGE_LEARN_GOAL} !`);
+      setFeedback(`Oups ! Tu as dépassé ${CHALLENGE_LEARN_GOAL}. Utilise ∇ pour revenir à ${CHALLENGE_LEARN_GOAL} !`);
       setColumns(newCols);
     }
 
     // E. learn-carry
     else if (phase === 'learn-carry' && hasCarry) {
-      sequenceFeedback("INCROYABLE ! 🎆  C'est de la MAGIE ! Dix billes dans la colonne des Unités se sont transformées en une seule bille dans la colonne des Dizaines !",
-        "C'est la RÈGLE D'OR du système décimal : 10 petites billes dans une colonne deviennent 1 grosse bille dans la colonne suivante. C'est comme échanger 10 pièces de 1 centime contre 1 pièce de 10 centimes !");
+      sequenceFeedback("INCROYABLE ! 🎆 C'est de la MAGIE ! 10 billes sont devenues 1 bille dans la colonne suivante !",
+        "C'est la RÈGLE D'OR : 10 billes = 1 bille dans la colonne de gauche !");
 
       // Marquer le défi des dizaines comme complété
       setCompletedChallenges(prev => ({ ...prev, tens: true }));
 
-      // Transition vers le jeu libre
+      // Transition vers le jeu libre ET déblocage automatique des centaines
       setTimeout(() => {
         setPhase('normal');
-        sequenceFeedback(" APPRENTISSAGE TERMINÉ ! Bravo champion !  Tu peux maintenant utiliser les Unités et les Dizaines librement pour créer tous les nombres que tu veux !",
-          "🔓 Utilise le bouton 'Débloquer la colonne suivante' pour continuer ta grande aventure et découvrir les CENTAINES (100, 200, 300...) ! Des nombres encore PLUS GRANDS t'attendent !",
+        // Débloquer automatiquement la colonne des centaines
+        const newCols = [...columns];
+        const hundredsIdx = 2;
+        if (!newCols[hundredsIdx].unlocked) {
+          newCols[hundredsIdx].unlocked = true;
+          setColumns(newCols);
+          setCompletedChallenges(prev => ({ ...prev, hundreds: true }));
+        }
+        sequenceFeedback("APPRENTISSAGE TERMINÉ ! Bravo ! 🎉 Tu peux maintenant utiliser librement les nombres !",
+          "🔓 Les CENTAINES sont débloquées ! Utilise le bouton pour débloquer les MILLIERS !",
           FEEDBACK_DELAY / 1.5);
       }, FEEDBACK_DELAY * 2);
       setColumns(newCols);
@@ -303,7 +307,7 @@ function MachineANombres() {
 
     // F. Feedback en mode normal
     else if (phase === 'normal' && hasCarry) {
-      setFeedback(" Échange magique ! 10 billes sont passées dans la colonne de gauche et se sont transformées en 1 ! Le système décimal est vraiment magique ! 🎩 Continue à cliquer pour voir d'autres transformations !");
+      setFeedback("Échange magique ! 10 billes → 1 bille dans la colonne de gauche ! 🎩");
       setColumns(newCols);
     }
 
@@ -311,7 +315,7 @@ function MachineANombres() {
     else {
       setColumns(newCols);
       if (phase === 'normal' || phase === 'done' || phase === 'learn-units') {
-        setFeedback(`🎈 Il y a maintenant ${newCols[idx].value} bille${newCols[idx].value > 1 ? 's' : ''} dans la colonne ${newCols[idx].name}. Clique sur le bouton VERT (△) pour en ajouter d'autres ou sur le ROUGE (∇) pour en retirer !`);
+        setFeedback(`🎈 ${newCols[idx].value} bille${newCols[idx].value > 1 ? 's' : ''} dans ${newCols[idx].name}. Clique sur △ ou ∇ !`);
       }
     }
 
@@ -333,8 +337,8 @@ function MachineANombres() {
 
     if (totalNumber <= 0) {
       sequenceFeedback(
-        "C'est **ZÉRO** (0) ! 🎯 Il n'y a plus rien du tout. On ne peut pas descendre plus bas que ZÉRO. C'est le plus petit nombre !",
-        "ZÉRO signifie qu'il n'y a aucune bille, aucune quantité. C'est le début et la fin du comptage !"
+        "C'est **ZÉRO** (0) ! 🎯 Il n'y a plus rien. On ne peut pas descendre plus bas !",
+        "ZÉRO = aucune bille, aucune quantité !"
       );
       return;
     }
@@ -368,7 +372,7 @@ function MachineANombres() {
       setColumns(newCols);
 
       if (phase !== 'click-remove' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'challenge-learn-unit') {
-        setFeedback(`🎈 Il y a maintenant ${newCols[idx].value} bille${newCols[idx].value > 1 ? 's' : ''} dans la colonne ${newCols[idx].name}. Choisis : clique sur le bouton VERT (△) pour ajouter ou sur le ROUGE (∇) pour en retirer encore !`);
+        setFeedback(`🎈 ${newCols[idx].value} bille${newCols[idx].value > 1 ? 's' : ''} dans ${newCols[idx].name}. Clique sur △ ou ∇ !`);
       }
     }
 
@@ -381,18 +385,18 @@ function MachineANombres() {
 
       if (unitsValue === 2) {
         sequenceFeedback(
-          "Génial !  🎈 Le bouton ROUGE enlève une bille bleue ! Regarde : il en reste deux maintenant au lieu de trois !",
-          "Le bouton VERT ajoute des billes, le bouton ROUGE les enlève. C'est comme remplir et vider un seau ! Facile, non ? Clique encore sur le bouton ROUGE (∇) pour continuer l'expérience !"
+          "Génial ! 🎈 Le bouton ROUGE enlève une bille ! Il en reste deux !",
+          "VERT ajoute, ROUGE enlève. Facile ! Clique encore sur ∇ !"
         );
       } else if (unitsValue === 1) {
         sequenceFeedback(
-          "Bravo petit champion !  Clique encore sur le bouton ROUGE pour tout enlever et voir la magie du ZÉRO !",
-          "Plus qu'une seule bille bleue ! Un dernier clic et tu découvriras un secret..."
+          "Bravo ! Clique encore sur ROUGE pour tout enlever !",
+          "Plus qu'une bille ! Un dernier clic !"
         );
       } else if (unitsValue === 0 && tempTotalBefore === 1) {
         sequenceFeedback(
-          "Extraordinaire !   Tu maîtrises parfaitement les deux boutons ! Toutes les billes ont disparu. Maintenant, je vais t'apprendre quelque chose de SUPER important : les **NOMBRES** !",
-          "Tu es prêt pour une grande aventure ! Les nombres vont t'aider à compter TOUT ce que tu veux ! Prépare ton doigt pour le bouton VERT (△) quand je te dirai de recommencer !"
+          "Extraordinaire ! 🎉 Tu maîtrises les deux boutons ! Je vais t'apprendre les **NOMBRES** !",
+          "Prépare-toi pour une grande aventure !"
         );
 
             // Transition vers un comptage automatique d'introduction avant l'exploration libre
@@ -402,21 +406,21 @@ function MachineANombres() {
                 setPhase('learn-units');
                 setIsCountingAutomatically(true);
                 sequenceFeedback(
-                  "Bienvenue dans le monde des NOMBRES ! 👋 ✨ Un nombre, c'est comme une recette magique qui nous dit COMBIEN il y a de quelque chose. Regarde ta machine : elle est vide, tu as **zéro bille**. C'est-à-dire... RIEN du tout !",
-                  "Observe sans toucher : la machine va compter toute seule de 1 à 9 pour te montrer comment les nombres grandissent. Après le spectacle, ce sera à toi de jouer !"
+                  "Bienvenue dans le monde des NOMBRES ! ✨ Un nombre dit COMBIEN il y a de choses.",
+                  "La machine va compter de 1 à 9. Observe !"
                 );
             }, FEEDBACK_DELAY * 2);
       } else if (unitsValue > 0) {
         sequenceFeedback(
-          `Bien joué !  Continue à cliquer sur le bouton ROUGE pour enlever les billes bleues une par une, comme si tu les retirais de ton sac !`,
-          "Le bouton ROUGE retire une bille à chaque fois que tu cliques. C'est toi le chef de la machine !"
+          `Bien joué ! Continue à cliquer sur ROUGE !`,
+          "Le bouton ROUGE retire une bille à chaque fois !"
         );
       }
     }
 
     // B. explore-units : si on soustrait trop tôt
     else if (phase === 'explore-units' && newCols[0].value < columns[0].value) {
-      setFeedback("On n'enlève pas encore, on est en train de découvrir l'ajout ! Clique sur le bouton VERT (△) pour continuer à faire apparaître les nouvelles billes !");
+      setFeedback("On n'enlève pas encore ! Clique sur △ pour ajouter !");
     }
 
     // C. click-remove (La soustraction et le retour à Zéro avec les doigts)
@@ -425,67 +429,67 @@ function MachineANombres() {
 
       if (unitsValue === 5) {
         sequenceFeedback(
-          `Le nombre est maintenant **${unitsValue}** (CINQ) ! ✋ Une main entière de doigts levés !`,
-          `Bien joué !  Tu as retiré une bille. Continue à enlever une par une en cliquant sur le bouton ROUGE (∇), comme si tu rangeais tes jouets !`
+          `**${unitsValue}** (CINQ) ! ✋ Une main entière !`,
+          `Bien joué ! Continue avec ∇ !`
         );
       } else if (unitsValue === 3) {
         sequenceFeedback(
-          `Le nombre est maintenant **${unitsValue}** (TROIS) ! 🎈 Tu te souviens ? Trois petits cochons !`,
-          `Génial ! Continue à descendre vers ZÉRO en cliquant sur le bouton ROUGE (∇) ! Chaque bille que tu retires rend le nombre plus petit !`
+          `**${unitsValue}** (TROIS) ! 🎈`,
+          `Continue vers zéro avec ∇ !`
         );
       } else if (unitsValue === 2) {
         sequenceFeedback(
-          `Le nombre est maintenant **${unitsValue}** (DEUX) ! ✌️ Deux doigts levés, comme le signe de la victoire !`,
-          `Super ! Encore un peu et on arrive à ZÉRO ! Tu y es presque ! Clique encore sur le bouton ROUGE (∇) !`
+          `**${unitsValue}** (DEUX) ! ✌️`,
+          `Presque à zéro ! Continue avec ∇ !`
         );
       } else if (unitsValue === 1) {
         sequenceFeedback(
-          `Le nombre est maintenant **${unitsValue}** (UN) ! 👆 Un seul doigt levé !`,
-          `Presque à ZÉRO ! Un dernier petit clic et tu découvriras le retour au début !`
+          `**${unitsValue}** (UN) ! 👆`,
+          `Presque à ZÉRO ! Un dernier clic !`
         );
       } else if (unitsValue === 0 && tempTotalBefore === 1) {
         sequenceFeedback(
-          "**ZÉRO** (0) !  Plus rien du tout ! Aucune bille, aucun doigt levé ! On est revenu au début !",
-          "Fantastique champion !  ⭐ Le compteur est revenu à **ZÉRO (0)** ! Tu comprends maintenant ce que veut dire compter en avant et compter en arrière ! C'est comme monter et descendre les escaliers !"
+          "**ZÉRO** (0) ! 🎉 Plus rien ! On est revenu au début !",
+          "Fantastique ! Tu maîtrises les nombres de 0 à 9 !"
         );
 
         // Transition vers la phase 'done'
         setTimeout(() => {
           setPhase('done');
-          setFeedback("Félicitations petit génie !  🏅 Tu maîtrises les nombres de 0 à 6 ! Clique sur 'Commencer l'apprentissage' pour découvrir le SECRET MAGIQUE de l'échange 10 pour 1 ! C'est une règle extraordinaire !");
+          setFeedback("Félicitations ! 🏅 Clique sur 'Commencer l'apprentissage' pour découvrir l'échange 10 pour 1 !");
         }, FEEDBACK_DELAY);
       } else if (unitsValue > 0) {
         sequenceFeedback(
-          `Le nombre est maintenant **${unitsValue}** !  Baisse un doigt et clique sur ROUGE !`,
-          `Bien joué ! Tu as retiré une bille. Il te reste **${unitsValue} doigts levés**. Continue en cliquant sur le bouton ROUGE (∇) jusqu'à revenir à ZÉRO !`
+          `**${unitsValue}** ! Baisse un doigt !`,
+          `${unitsValue} doigts levés. Continue avec ∇ !`
         );
       }
     }
 
     // D. Feedback sur l'emprunt en mode normal
     if (phase === 'normal' && hasBorrow) {
-      setFeedback("🔄 Emprunt magique ! Nous avons dû emprunter à la colonne de gauche et laisser 9 ici. C'est le principe de la soustraction dans le système décimal ! Intelligent, non ? Continue ta soustraction en cliquant encore sur le bouton ROUGE (∇) si nécessaire !");
+      setFeedback("🔄 Emprunt magique ! Continue avec ∇ si nécessaire !");
     }
   }, [columns, phase, isUnitsColumn, totalNumber, isCountingAutomatically, sequenceFeedback]);
 
 
-  // --- LOGIQUE BOUTON VALIDER DU DÉFI D'APPRENTISSAGE (5) ---
+  // --- LOGIQUE BOUTON VALIDER DU DÉFI D'APPRENTISSAGE (9) ---
   const handleValidateLearning = useCallback(() => {
     if (phase === 'challenge-learn-unit') {
       if (columns[0].value === CHALLENGE_LEARN_GOAL) {
-        setFeedback(" DÉFI RÉUSSI ! Bravo champion !  Tu as parfaitement compris les unités. Reste prêt à cliquer sur le bouton VERT (△) pour déclencher le MOMENT MAGIQUE de l'échange !");
+        setFeedback("DÉFI RÉUSSI ! Bravo ! 🎉 Prépare-toi pour l'échange magique !");
 
         // Transition vers la phase 'learn-carry'
         setTimeout(() => {
           setPhase('learn-carry');
           // Afficher un premier message, puis un rappel après un court délai
           sequenceFeedback(
-            "Prêt pour la magie ? 🎩 Clique sur le bouton VERT (△) pour faire le dernier pas et forcer la machine à faire son tour de magie : l'échange 10 pour 1 !",
-            "Vas-y champion ! Clique sur △ pour voir la transformation magique : 10 petites billes deviennent 1 grosse bille !"
+            "Prêt pour la magie ? 🎩 Clique sur △ pour l'échange 10 pour 1 !",
+            "Vas-y ! Clique sur △ pour voir la transformation !"
           );
         }, FEEDBACK_DELAY);
       } else {
-        setFeedback(`Pas encore !  Il faut afficher exactement ${CHALLENGE_LEARN_GOAL} dans les unités. Utilise les deux boutons (VERT et ROUGE) pour y arriver !`);
+        setFeedback(`Pas encore ! Il faut ${CHALLENGE_LEARN_GOAL}. Utilise △ et ∇ !`);
       }
     }
   }, [phase, columns, sequenceFeedback]);
@@ -503,8 +507,8 @@ function MachineANombres() {
   setIsCountingAutomatically(true); // DÉCLENCHEMENT DE L'AUTO-COMPTAGE
 
       sequenceFeedback(
-        "C'est parti pour l'aventure !  Regarde bien la machine compter de 1 à 9 et écoute les commentaires magiques...",
-        "Observe bien le nombre de billes qui s'allument à chaque unité. Garde tes mains tranquilles et compte avec tes yeux et tes doigts comme si tu suivais un spectacle de lumières !"
+        "C'est parti ! 🎉 La machine va compter de 1 à 9 !",
+        "Observe bien les billes ! Compte avec tes doigts !"
       );
     }
   }, [phase, sequenceFeedback]);
@@ -520,34 +524,29 @@ function MachineANombres() {
 
       // Générer un message d'explication adapté au niveau
       if (nextIdx === 1 && !completedChallenges.tens) {
-        setFeedback("⚠️ Attention ! Tu dois d'abord compléter le défi des dizaines avant de débloquer ce niveau. Retourne cliquer sur les boutons VERT (△) et ROUGE (∇) de la colonne des Unités pour réussir le défi !");
+        setFeedback("⚠️ Tu dois d'abord compléter le défi des dizaines !");
         return;
       } else if (nextIdx === 2) {
-        if (!completedChallenges.tens) {
-          setFeedback("⚠️ Attention ! Tu dois d'abord maîtriser les dizaines avant de découvrir les centaines. Reviens compléter le défi des dizaines en utilisant les boutons VERT (△) et ROUGE (∇) avant de réessayer !");
-          newCols[nextIdx].unlocked = false;
-          setColumns(newCols);
-          return;
-        }
+        // Pas besoin de vérifier tens car déjà débloqué automatiquement après learn-carry
         setCompletedChallenges(prev => ({ ...prev, hundreds: true }));
         sequenceFeedback(
-          ` NIVEAU DÉBLOQUÉ : Les CENTAINES ! 💯 Bienvenue dans le monde des GRANDS nombres !`,
-          `Les CENTAINES, ce sont des nombres comme 100, 200, 300... Imagine : 100 c'est comme avoir 10 paquets de 10 bonbons ! C'est BEAUCOUP ! Utilise les boutons pour construire ces grands nombres jusqu'à 999 ! 🚀`
+          "NIVEAU DÉBLOQUÉ : Les CENTAINES ! 💯",
+          `Les CENTAINES : 100, 200, 300... Crée des grands nombres jusqu'à 999 ! 🚀`
         );
       } else if (nextIdx === 3) {
         if (!completedChallenges.hundreds) {
-          setFeedback("⚠️ Attention ! Tu dois d'abord maîtriser les centaines avant de découvrir les milliers. Continue à t'entraîner avec les boutons VERT (△) et ROUGE (∇) sur les colonnes déjà débloquées avant de revenir !");
+          setFeedback("⚠️ Tu dois d'abord maîtriser les centaines !");
           newCols[nextIdx].unlocked = false;
           setColumns(newCols);
           return;
         }
         setCompletedChallenges(prev => ({ ...prev, thousands: true }));
         sequenceFeedback(
-          ` NIVEAU MAXIMUM DÉBLOQUÉ : Les MILLIERS !  Tu es maintenant un MAÎTRE des nombres !`,
-          `Les MILLIERS, ce sont des nombres GIGANTESQUES comme 1000, 2000, 3000... Imagine : 1000 c'est comme avoir 10 paquets de 100 bonbons ! C'est ÉNORME ! Amuse-toi à cliquer sur les boutons pour fabriquer ces nombres géants jusqu'à 9999 ! `
+          "NIVEAU MAXIMUM : Les MILLIERS ! 🎉",
+          `Les MILLIERS : 1000, 2000, 3000... Crée des nombres géants jusqu'à 9999 !`
         );
       } else {
-        setFeedback(`🔓 Colonne ${newCols[nextIdx].name} débloquée ! Maintenant, tu peux créer des nombres jusqu'à ${Math.pow(10, nextIdx + 1) - 1}. Clique sur les boutons VERT (△) et ROUGE (∇) pour expérimenter et t'amuser !`);
+        setFeedback(`🔓 Colonne ${newCols[nextIdx].name} débloquée ! Clique sur △ et ∇ pour t'amuser !`);
       }
     }
   }, [columns, completedChallenges, sequenceFeedback]);
@@ -557,25 +556,25 @@ function MachineANombres() {
   const instruction = useMemo(() => {
     switch (phase) {
       case 'tutorial':
-        return " Bienvenue petit explorateur ! Clique sur le bouton VERT (△) pour découvrir comment fonctionne cette machine magique. Essaie plusieurs fois pour voir ce qui se passe !";
+        return "Bienvenue ! Clique sur △ pour découvrir la machine !";
       case 'explore-units':
-        return " Clique sur le bouton VERT (△) pour ajouter une bille. Lève **UN doigt** à chaque clic. **Répète à haute voix** : ZÉRO (rien), puis UN, DEUX, TROIS !";
+        return "Clique sur △ pour ajouter une bille. Lève UN doigt à chaque clic. Répète : UN, DEUX, TROIS !";
       case 'click-add':
-        return "Pratique maintenant ! 🎯 Continue à cliquer jusqu'à **SIX** (six doigts levés). Chaque clic ajoute **UNE** bille de plus dans ta machine !";
+        return "Continue jusqu'à 9 ! Chaque clic ajoute UNE bille !";
       case 'click-remove':
-        return "Très bien champion !  Clique maintenant sur le bouton ROUGE (∇) pour enlever les billes une par une. Baisse **UN doigt** à chaque fois jusqu'à revenir à **ZÉRO** (plus rien).";
+        return "Clique sur ∇ pour enlever les billes jusqu'à ZÉRO !";
       case 'done':
-        return " Génial ! Tu es un champion ! Clique sur **'Commencer l'apprentissage'** pour découvrir la **RÈGLE D'OR du système décimal : l'échange magique 10 pour 1** ! 🎩";
+        return "Génial ! Clique sur 'Commencer l'apprentissage' pour découvrir l'échange 10 pour 1 ! 🎩";
       case 'learn-units':
-        return "Regarde bien ! 👀 La machine va compter toute seule de 1 à 9. Observe comment chaque nombre représente une quantité. Tu peux compter avec tes doigts !";
+        return "Regarde ! 👀 La machine compte de 1 à 9. Compte avec tes doigts !";
       case 'challenge-learn-unit':
-        return ` DÉFI DES UNITÉS : Utilise les boutons pour afficher exactement le nombre **${CHALLENGE_LEARN_GOAL}** dans les unités, puis clique sur **VALIDER** !`;
+        return `DÉFI : Affiche le nombre **${CHALLENGE_LEARN_GOAL}** puis clique sur VALIDER !`;
       case 'learn-carry':
-        return "C'est le grand moment ! 🎆 Clique sur △ pour faire le dernier pas et observer la transformation magique de l'échange !";
+        return "C'est le grand moment ! 🎆 Clique sur △ pour voir la transformation !";
       case 'normal':
-        return "Mode exploration ! 🚀 Construis de grands nombres et observe comment la machine fait ses échanges magiques. Tu es maintenant un expert !";
+        return "Mode exploration ! 🚀 Construis des grands nombres !";
       default:
-        return "Prépare-toi pour une grande aventure dans le monde des nombres ! ";
+        return "Prépare-toi pour l'aventure des nombres !";
     }
   }, [phase]);
 
