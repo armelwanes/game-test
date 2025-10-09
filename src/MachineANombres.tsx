@@ -9,7 +9,8 @@ interface Column {
 
 // Phases du flux d'apprentissage
 type Phase = 'tutorial' | 'explore-units' | 'click-add' | 'click-remove' | 'done' |
-  'learn-units' | 'challenge-learn-unit' | 'learn-carry' | 'normal';
+  'learn-units' | 'challenge-learn-unit' | 'learn-carry' | 
+  'learn-tens' | 'challenge-tens-1' | 'challenge-tens-2' | 'challenge-tens-3' | 'normal';
 
 const COLUMN_NAMES = ["Unités", "Dizaines", "Centaines", "Milliers"];
 const TYPING_SPEED = 18;
@@ -18,6 +19,13 @@ const MESSAGE_READ_DELAY = 3000;
 const COUNT_SPEED = 1800;
 const FEEDBACK_DELAY = 1200;
 const CHALLENGE_LEARN_GOAL = 9;
+
+// Défis pour les dizaines - nombre augmente de 2 par étape
+const TENS_CHALLENGES = [
+  { phase: 'challenge-tens-1' as const, targets: [23, 45] },           // 2 nombres
+  { phase: 'challenge-tens-2' as const, targets: [12, 34, 56, 78] },  // 4 nombres
+  { phase: 'challenge-tens-3' as const, targets: [21, 43, 65, 87, 19, 92] }  // 6 nombres
+];
 
 const initialColumns: Column[] = COLUMN_NAMES.map((name, idx) => ({
   name,
@@ -49,6 +57,10 @@ function MachineANombres() {
     hundreds: false,  // Centaines
     thousands: false  // Milliers
   });
+
+  // État pour les défis des dizaines
+  const [tensTargetIndex, setTensTargetIndex] = useState(0); // Index du nombre cible actuel
+  const [tensSuccessCount, setTensSuccessCount] = useState(0); // Nombre de réussites dans le défi actuel
 
   const totalNumber = useMemo(() =>
     columns.reduce((acc, col, idx) => acc + col.value * Math.pow(10, idx), 0),
@@ -158,6 +170,93 @@ function MachineANombres() {
   }, [phase, isCountingAutomatically, columns, nextPhaseAfterAuto, sequenceFeedback]);
 
 
+  // 🚀 EFFECT : Gère l'auto-comptage pour les dizaines (10, 20, 30, ... 90)
+  useEffect(() => {
+    let timer: number | undefined;
+
+    if (phase === 'learn-tens' && isCountingAutomatically) {
+      const tensValue = columns[1].value;
+      const unitsValue = columns[0].value;
+
+      // S'assurer que les unités sont à 0 pour l'apprentissage des dizaines
+      if (unitsValue !== 0) {
+        const newCols = [...columns];
+        newCols[0].value = 0;
+        setColumns(newCols);
+        return;
+      }
+
+      // PARTIE A: COMPTAGE des dizaines (0 à 8)
+      if (tensValue < 9) {
+        const speed = COUNT_SPEED;
+        const nextValue = tensValue + 1;
+
+        timer = setTimeout(() => {
+          setColumns(prevCols => {
+            const newCols = [...prevCols];
+            if (newCols[1].value === tensValue && newCols[0].value === 0) {
+              newCols[1].value++;
+            }
+            return newCols;
+          });
+
+          let infoMessage = "";
+          const displayNumber = nextValue * 10;
+          if (nextValue === 1) {
+            infoMessage = `**${displayNumber}** (DIX) ! 🎯 Une dizaine = 10 unités !`;
+          } else if (nextValue === 2) {
+            infoMessage = `**${displayNumber}** (VINGT) ! Deux dizaines = 20 unités !`;
+          } else if (nextValue === 3) {
+            infoMessage = `**${displayNumber}** (TRENTE) ! Trois paquets de 10 !`;
+          } else if (nextValue === 4) {
+            infoMessage = `**${displayNumber}** (QUARANTE) ! Quatre dizaines !`;
+          } else if (nextValue === 5) {
+            infoMessage = `**${displayNumber}** (CINQUANTE) ! La moitié de 100 ! ✋`;
+          } else if (nextValue === 6) {
+            infoMessage = `**${displayNumber}** (SOIXANTE) ! Six dizaines !`;
+          } else if (nextValue === 7) {
+            infoMessage = `**${displayNumber}** (SOIXANTE-DIX) ! Sept dizaines !`;
+          } else if (nextValue === 8) {
+            infoMessage = `**${displayNumber}** (QUATRE-VINGTS) ! Huit dizaines !`;
+          } else if (nextValue === 9) {
+            infoMessage = `**${displayNumber}** (QUATRE-VINGT-DIX) ! 🎯 Presque 100 !`;
+          }
+
+          setFeedback(infoMessage);
+
+        }, speed);
+
+      }
+
+      // PARTIE B: ARRÊT À 90 (9 dizaines) et RESET
+      else if (tensValue === 9) {
+        setFeedback("STOP ! 🛑 Le compteur est à 90. Tu as vu tous les nombres avec les dizaines ! Bravo !");
+
+        // Reset et Transition vers le premier défi
+        timer = setTimeout(() => {
+          const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+          setColumns(resetCols);
+          setIsCountingAutomatically(false);
+          setTensTargetIndex(0);
+          setTensSuccessCount(0);
+
+          setFeedback("Retour à zéro ! 🔄 Maintenant c'est à toi de jouer !");
+
+          // Lancement du premier défi des dizaines
+          setTimeout(() => {
+            setPhase('challenge-tens-1');
+            const firstTarget = TENS_CHALLENGES[0].targets[0];
+            setFeedback(`🎯 DÉFI 1 : Affiche le nombre **${firstTarget}** avec les boutons, puis clique sur VALIDER !`);
+          }, FEEDBACK_DELAY);
+        }, COUNT_SPEED * 3);
+
+      }
+    }
+
+    return () => clearTimeout(timer);
+  }, [phase, isCountingAutomatically, columns]);
+
+
   // --- LOGIQUE AJOUTER (HANDLE ADD) ---
   const handleAdd = useCallback((idx: number) => {
 
@@ -165,7 +264,7 @@ function MachineANombres() {
   if (isCountingAutomatically || isTransitioningToChallenge) return;
 
     // Restrictions générales
-    if (phase !== 'normal' && !isUnitsColumn(idx) && phase !== 'learn-carry' && phase !== 'challenge-learn-unit' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'click-add') {
+    if (phase !== 'normal' && !isUnitsColumn(idx) && phase !== 'learn-carry' && phase !== 'challenge-learn-unit' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'click-add' && phase !== 'challenge-tens-1' && phase !== 'challenge-tens-2' && phase !== 'challenge-tens-3') {
       setFeedback("Concentrons-nous sur la colonne des Unités pour l'instant. Clique uniquement sur les boutons VERT (△) ou ROUGE (∇) de cette colonne pour continuer la mission !");
       return;
     }
@@ -306,23 +405,19 @@ function MachineANombres() {
       sequenceFeedback("INCROYABLE ! 🎆 C'est de la MAGIE ! 10 billes sont devenues 1 bille dans la colonne suivante !",
         "C'est la RÈGLE D'OR : 10 billes = 1 bille dans la colonne de gauche !");
 
-      // Marquer le défi des dizaines comme complété
-      setCompletedChallenges(prev => ({ ...prev, tens: true }));
-
-      // Transition vers le jeu libre ET déblocage automatique des centaines
+      // Transition vers l'apprentissage des dizaines
       setTimeout(() => {
-        setPhase('normal');
-        // Débloquer automatiquement la colonne des centaines
-        const newCols = [...columns];
-        const hundredsIdx = 2;
-        if (!newCols[hundredsIdx].unlocked) {
-          newCols[hundredsIdx].unlocked = true;
-          setColumns(newCols);
-          setCompletedChallenges(prev => ({ ...prev, hundreds: true }));
-        }
-        sequenceFeedback("APPRENTISSAGE TERMINÉ ! Bravo ! 🎉 Tu peux maintenant utiliser librement les nombres !",
-          "🔓 Les CENTAINES sont débloquées ! Utilise le bouton pour débloquer les MILLIERS !",
-          FEEDBACK_DELAY / 1.5);
+        // Réinitialiser les colonnes pour l'apprentissage des dizaines
+        const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+        setColumns(resetCols);
+        setPhase('learn-tens');
+        setPendingAutoCount(true);
+        setIsCountingAutomatically(false);
+
+        sequenceFeedback(
+          "Bravo ! 🎉 Maintenant on va apprendre les DIZAINES !",
+          "Observe comment la machine compte par dizaines : 10, 20, 30... !"
+        );
       }, FEEDBACK_DELAY * 2);
       setColumns(newCols);
     }
@@ -352,7 +447,7 @@ function MachineANombres() {
     if (isCountingAutomatically) return;
 
     // Restrictions des clics non Unités pendant le tutoriel
-    if (phase !== 'normal' && !isUnitsColumn(idx) && phase !== 'challenge-learn-unit' && phase !== 'click-remove' && phase !== 'tutorial' && phase !== 'explore-units') {
+    if (phase !== 'normal' && !isUnitsColumn(idx) && phase !== 'challenge-learn-unit' && phase !== 'click-remove' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'challenge-tens-1' && phase !== 'challenge-tens-2' && phase !== 'challenge-tens-3') {
       setFeedback("Concentrons-nous sur la colonne des Unités pour l'instant. Clique uniquement sur les boutons VERT (△) ou ROUGE (∇) de cette colonne pour continuer la mission !");
       return;
     }
@@ -522,6 +617,82 @@ function MachineANombres() {
   }, [phase, columns, sequenceFeedback]);
 
 
+  // --- LOGIQUE BOUTON VALIDER DES DÉFIS DES DIZAINES ---
+  const handleValidateTens = useCallback(() => {
+    const challengePhases = ['challenge-tens-1', 'challenge-tens-2', 'challenge-tens-3'] as const;
+    const challengeIndex = challengePhases.indexOf(phase as typeof challengePhases[number]);
+    
+    if (challengeIndex === -1) return;
+
+    const challenge = TENS_CHALLENGES[challengeIndex];
+    const targetNumber = challenge.targets[tensTargetIndex];
+    const currentNumber = totalNumber;
+
+    if (currentNumber === targetNumber) {
+      const newSuccessCount = tensSuccessCount + 1;
+      setTensSuccessCount(newSuccessCount);
+
+      // Si tous les nombres du défi actuel sont validés
+      if (tensTargetIndex + 1 >= challenge.targets.length) {
+        // Si c'est le dernier défi
+        if (challengeIndex === TENS_CHALLENGES.length - 1) {
+          setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les dizaines !");
+          
+          // Marquer les dizaines comme complétées et débloquer les centaines
+          setCompletedChallenges(prev => ({ ...prev, tens: true }));
+          
+          setTimeout(() => {
+            setPhase('normal');
+            const newCols = [...columns];
+            const hundredsIdx = 2;
+            if (!newCols[hundredsIdx].unlocked) {
+              newCols[hundredsIdx].unlocked = true;
+              setColumns(newCols);
+              setCompletedChallenges(prev => ({ ...prev, hundreds: true }));
+            }
+            sequenceFeedback(
+              "APPRENTISSAGE DES DIZAINES TERMINÉ ! Bravo ! 🎉 Tu peux maintenant utiliser librement les nombres !",
+              "🔓 Les CENTAINES sont débloquées ! Utilise le bouton pour débloquer les MILLIERS !",
+              FEEDBACK_DELAY / 1.5
+            );
+          }, FEEDBACK_DELAY * 2);
+        } else {
+          // Passer au défi suivant
+          const nextChallenge = TENS_CHALLENGES[challengeIndex + 1];
+          setFeedback(`🎉 DÉFI ${challengeIndex + 1} RÉUSSI ! Préparé pour le prochain ?`);
+          
+          setTimeout(() => {
+            setTensTargetIndex(0);
+            setTensSuccessCount(0);
+            setPhase(nextChallenge.phase);
+            
+            // Réinitialiser les colonnes
+            const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+            setColumns(resetCols);
+            
+            setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
+          }, FEEDBACK_DELAY * 2);
+        }
+      } else {
+        // Passer au nombre suivant dans le même défi
+        setTensTargetIndex(tensTargetIndex + 1);
+        const nextTarget = challenge.targets[tensTargetIndex + 1];
+        
+        // Réinitialiser les colonnes
+        const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+        setColumns(resetCols);
+        
+        sequenceFeedback(
+          `✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`,
+          `Maintenant affiche **${nextTarget}** !`
+        );
+      }
+    } else {
+      setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
+    }
+  }, [phase, columns, totalNumber, tensTargetIndex, tensSuccessCount, sequenceFeedback]);
+
+
   // --- LOGIQUE DÉMARRAGE APPRENTISSAGE (post-tutoriel) ---
   const startLearningPhase = useCallback(() => {
     if (phase === 'done') {
@@ -599,12 +770,22 @@ function MachineANombres() {
         return `DÉFI : Affiche le nombre **${CHALLENGE_LEARN_GOAL}** puis clique sur VALIDER !`;
       case 'learn-carry':
         return "C'est le grand moment ! 🎆 Clique sur △ pour voir la transformation !";
+      case 'learn-tens':
+        return "Regarde ! 👀 La machine compte par dizaines : 10, 20, 30...";
+      case 'challenge-tens-1':
+      case 'challenge-tens-2':
+      case 'challenge-tens-3': {
+        const challengeIndex = ['challenge-tens-1', 'challenge-tens-2', 'challenge-tens-3'].indexOf(phase);
+        const challenge = TENS_CHALLENGES[challengeIndex];
+        const targetNumber = challenge.targets[tensTargetIndex];
+        return `DÉFI ${challengeIndex + 1} : Affiche **${targetNumber}** puis clique sur VALIDER ! (${tensSuccessCount}/${challenge.targets.length})`;
+      }
       case 'normal':
         return "Mode exploration ! 🚀 Construis des grands nombres !";
       default:
         return "Prépare-toi pour l'aventure des nombres !";
     }
-  }, [phase]);
+  }, [phase, tensTargetIndex, tensSuccessCount]);
 
   // Typing queue to ensure messages are typed one after another
   const queueRef = useRef<Array<{ kind: 'instruction' | 'feedback'; text: string }>>([]);
@@ -676,10 +857,10 @@ function MachineANombres() {
 
   // --- Démarrage du compteur auto après le texte d'observation ---
   useEffect(() => {
-    // On veut démarrer le comptage auto uniquement après la phase 'learn-units',
+    // On veut démarrer le comptage auto uniquement après la phase 'learn-units' ou 'learn-tens',
     // lorsque toutes les animations de texte sont terminées
     if (
-      phase === 'learn-units' &&
+      (phase === 'learn-units' || phase === 'learn-tens') &&
       pendingAutoCount &&
       !isCountingAutomatically &&
       !isTypingInstruction &&
@@ -694,6 +875,7 @@ function MachineANombres() {
   const showUnlockButton = phase === 'normal' && !allColumnsUnlocked;
   const showStartLearningButton = phase === 'done';
   const showValidateLearningButton = phase === 'challenge-learn-unit';
+  const showValidateTensButton = phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3';
 
   // --- Rendu des jetons visuels ---
   const renderTokens = useCallback((value: number) => (
@@ -766,6 +948,10 @@ function MachineANombres() {
                 isInteractive = true;
               }
               else if (phase === 'learn-carry' && isUnit) {
+                isInteractive = true;
+              }
+              else if ((phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3') && (isUnit || originalIdx === 1)) {
+                // Pendant les défis des dizaines, activer à la fois les unités et les dizaines
                 isInteractive = true;
               }
             }
@@ -885,6 +1071,47 @@ function MachineANombres() {
           </div>
         )}
 
+        {/* BOUTON VALIDER (Défis des dizaines) */}
+        {showValidateTensButton && (() => {
+          const challengeIndex = ['challenge-tens-1', 'challenge-tens-2', 'challenge-tens-3'].indexOf(phase as string);
+          const challenge = TENS_CHALLENGES[challengeIndex];
+          const targetNumber = challenge.targets[tensTargetIndex];
+          const isCorrect = totalNumber === targetNumber;
+          
+          return (
+            <div style={{ marginTop: 20, textAlign: 'center' }}>
+              <button
+                onClick={handleValidateTens}
+                style={{
+                  fontSize: 16,
+                  padding: '10px 30px',
+                  background: isCorrect
+                    ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                    : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  boxShadow: isCorrect
+                    ? '0 4px 8px rgba(34, 197, 94, 0.3)'
+                    : '0 4px 8px rgba(249, 115, 22, 0.3)',
+                  transition: 'all 0.2s ease',
+                  animation: isCorrect ? 'celebration 0.6s ease-in-out infinite' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                {isCorrect ? '✅ VALIDER LE DÉFI ' : '🎯 VALIDER LE DÉFI'}
+              </button>
+            </div>
+          );
+        })()}
+
         {/* Boutons de phase (Débloquer / Commencer) */}
         {(showUnlockButton || showStartLearningButton) && (
           <div style={{ marginTop: 16, textAlign: 'center' }}>
@@ -979,16 +1206,16 @@ function MachineANombres() {
             fontWeight: 'bold',
             color: '#fff',
             background: phase === 'done' ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' :
-              (phase === 'learn-units' || phase === 'challenge-learn-unit' || phase === 'learn-carry' ? 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)' :
+              (phase === 'learn-units' || phase === 'challenge-learn-unit' || phase === 'learn-carry' || phase === 'learn-tens' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3' ? 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)' :
                 (phase === 'tutorial' ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)')),
             padding: '8px 12px',
             borderRadius: 20,
             textAlign: 'center',
             boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-            animation: phase === 'challenge-learn-unit' ? 'pulse 2s ease-in-out infinite' : 'none'
+            animation: (phase === 'challenge-learn-unit' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3') ? 'pulse 2s ease-in-out infinite' : 'none'
           }}>
             {phase === 'done' ? ' Tutoriel Terminé !' :
-              (phase === 'learn-units' || phase === 'challenge-learn-unit' || phase === 'learn-carry') ? '💡 Apprentissage en cours' :
+              (phase === 'learn-units' || phase === 'challenge-learn-unit' || phase === 'learn-carry' || phase === 'learn-tens' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3') ? '💡 Apprentissage en cours' :
                 phase === 'tutorial' ? ' Découverte de la machine' : '📚 Exploration'}
           </div>
         )}
