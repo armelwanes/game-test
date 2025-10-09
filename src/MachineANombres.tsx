@@ -455,10 +455,13 @@ function MachineANombres() {
           "Fantastique ! Tu maîtrises les nombres de 0 à 9 !"
         );
 
-        // Transition vers la phase 'done'
+        // Transition directe vers le défi d'évaluation
         setTimeout(() => {
-          setPhase('done');
-          setFeedback("Félicitations ! 🏅 Clique sur 'Commencer l'apprentissage' pour découvrir l'échange 10 pour 1 !");
+          // Débloquer la colonne des dizaines pour préparer le défi
+          const newCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+          setColumns(newCols);
+          setPhase('challenge-learn-unit');
+          setFeedback(`Bravo ! 🎉 Maintenant, DÉFI : Affiche le nombre **${CHALLENGE_LEARN_GOAL}** avec les boutons, puis clique sur VALIDER !`);
         }, FEEDBACK_DELAY);
       } else if (unitsValue > 0) {
         sequenceFeedback(
