@@ -9,8 +9,8 @@ interface Column {
 
 // Phases du flux d'apprentissage
 type Phase = 'tutorial' | 'explore-units' | 'click-add' | 'click-remove' | 'done' |
-  'learn-units' | 'challenge-learn-unit' | 'learn-carry' | 
-  'learn-tens' | 'challenge-tens-1' | 'challenge-tens-2' | 'challenge-tens-3' | 'normal';
+  'learn-units' | 'challenge-unit-1' | 'challenge-unit-2' | 'challenge-unit-3' | 'learn-carry' | 
+  'learn-tens' | 'learn-tens-combination' | 'challenge-tens-1' | 'challenge-tens-2' | 'challenge-tens-3' | 'normal';
 
 const COLUMN_NAMES = ["Unités", "Dizaines", "Centaines", "Milliers"];
 const TYPING_SPEED = 18;
@@ -18,7 +18,13 @@ const MESSAGE_READ_DELAY = 3000;
 // Vitesse de l'auto-incrémentation ralentie pour le commentaire
 const COUNT_SPEED = 1800;
 const FEEDBACK_DELAY = 1200;
-const CHALLENGE_LEARN_GOAL = 9;
+
+// Défis pour les unités - progression graduelle
+const UNIT_CHALLENGES = [
+  { phase: 'challenge-unit-1' as const, targets: [3, 5, 7] },     // 3 nombres
+  { phase: 'challenge-unit-2' as const, targets: [2, 6, 8] },     // 3 nombres  
+  { phase: 'challenge-unit-3' as const, targets: [4, 9, 1] }      // 3 nombres
+];
 
 // Défis pour les dizaines - nombre augmente de 2 par étape
 const TENS_CHALLENGES = [
@@ -57,6 +63,10 @@ function MachineANombres() {
     hundreds: false,  // Centaines
     thousands: false  // Milliers
   });
+
+  // État pour les défis des unités
+  const [unitTargetIndex, setUnitTargetIndex] = useState(0); // Index du nombre cible actuel
+  const [unitSuccessCount, setUnitSuccessCount] = useState(0); // Nombre de réussites dans le défi actuel
 
   // État pour les défis des dizaines
   const [tensTargetIndex, setTensTargetIndex] = useState(0); // Index du nombre cible actuel
@@ -134,20 +144,23 @@ function MachineANombres() {
 
         // 2. Reset et Transition
         timer = setTimeout(() => {
-          const targetPhase = nextPhaseAfterAuto ?? 'challenge-learn-unit';
+          const targetPhase = nextPhaseAfterAuto ?? 'challenge-unit-1';
 
-          if (targetPhase === 'challenge-learn-unit') {
+          if (targetPhase === 'challenge-unit-1') {
             const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
             setColumns(resetCols);
             setIsCountingAutomatically(false);
             setNextPhaseAfterAuto(null);
+            setUnitTargetIndex(0);
+            setUnitSuccessCount(0);
 
-            setFeedback("Retour à zéro ! 🔄 Maintenant, affiche le nombre 9 avec les boutons !");
+            setFeedback("Retour à zéro ! 🔄 Maintenant, c'est à toi de jouer !");
 
-            // Lancement du défi manuel
+            // Lancement du premier défi manuel
             setTimeout(() => {
-              setPhase('challenge-learn-unit');
-              setFeedback(` DÉFI : Affiche le nombre **${CHALLENGE_LEARN_GOAL}** avec les boutons, puis clique sur VALIDER !`);
+              setPhase('challenge-unit-1');
+              const firstTarget = UNIT_CHALLENGES[0].targets[0];
+              setFeedback(`🎯 DÉFI 1 : Affiche le nombre **${firstTarget}** avec les boutons, puis clique sur VALIDER !`);
             }, FEEDBACK_DELAY);
           } else {
             setColumns(initialColumns.map(col => ({ ...col })));
@@ -232,7 +245,76 @@ function MachineANombres() {
       else if (tensValue === 9) {
         setFeedback("STOP ! 🛑 Le compteur est à 90. Tu as vu tous les nombres avec les dizaines ! Bravo !");
 
-        // Reset et Transition vers le premier défi
+        // Reset et Transition vers la phase de combinaison
+        timer = setTimeout(() => {
+          const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+          setColumns(resetCols);
+          setIsCountingAutomatically(false);
+
+          setFeedback("Retour à zéro ! 🔄 Maintenant on va apprendre à combiner les dizaines et les unités !");
+
+          // Lancement de la phase de combinaison
+          setTimeout(() => {
+            setPhase('learn-tens-combination');
+            setPendingAutoCount(true);
+            setIsCountingAutomatically(false);
+            sequenceFeedback(
+              "🎯 Apprends à combiner ! Par exemple : 2 dizaines + 3 unités = 23 !",
+              "Regarde bien : la machine va te montrer des exemples !"
+            );
+          }, FEEDBACK_DELAY);
+        }, COUNT_SPEED * 3);
+
+      }
+    }
+
+    // Auto-comptage pour learn-tens-combination (exemples de combinaisons)
+    if (phase === 'learn-tens-combination' && isCountingAutomatically) {
+      const tensValue = columns[1].value;
+      const unitsValue = columns[0].value;
+
+      // Exemples à montrer: 12, 25, 34, 47, 56, 83
+      const examples = [
+        { tens: 1, units: 2, name: "DOUZE" },
+        { tens: 2, units: 5, name: "VINGT-CINQ" },
+        { tens: 3, units: 4, name: "TRENTE-QUATRE" },
+        { tens: 4, units: 7, name: "QUARANTE-SEPT" },
+        { tens: 5, units: 6, name: "CINQUANTE-SIX" },
+        { tens: 8, units: 3, name: "QUATRE-VINGT-TROIS" }
+      ];
+
+      // Trouver l'index de l'exemple actuel
+      const currentExampleIndex = examples.findIndex(ex => ex.tens === tensValue && ex.units === unitsValue);
+      
+      if (currentExampleIndex === -1) {
+        // Initialiser au premier exemple
+        timer = setTimeout(() => {
+          setColumns(prevCols => {
+            const newCols = [...prevCols];
+            newCols[1].value = examples[0].tens;
+            newCols[0].value = examples[0].units;
+            return newCols;
+          });
+          const total = examples[0].tens * 10 + examples[0].units;
+          setFeedback(`**${total}** (${examples[0].name}) ! ${examples[0].tens} dizaine${examples[0].tens > 1 ? 's' : ''} + ${examples[0].units} unité${examples[0].units > 1 ? 's' : ''} = ${total} !`);
+        }, COUNT_SPEED);
+      } else if (currentExampleIndex < examples.length - 1) {
+        // Passer à l'exemple suivant
+        timer = setTimeout(() => {
+          const nextExample = examples[currentExampleIndex + 1];
+          setColumns(prevCols => {
+            const newCols = [...prevCols];
+            newCols[1].value = nextExample.tens;
+            newCols[0].value = nextExample.units;
+            return newCols;
+          });
+          const total = nextExample.tens * 10 + nextExample.units;
+          setFeedback(`**${total}** (${nextExample.name}) ! ${nextExample.tens} dizaine${nextExample.tens > 1 ? 's' : ''} + ${nextExample.units} unité${nextExample.units > 1 ? 's' : ''} = ${total} !`);
+        }, COUNT_SPEED);
+      } else {
+        // Fin des exemples, transition vers les défis
+        setFeedback("Bravo ! 🎉 Tu as vu comment combiner dizaines et unités ! Maintenant c'est à toi !");
+        
         timer = setTimeout(() => {
           const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
           setColumns(resetCols);
@@ -240,21 +322,19 @@ function MachineANombres() {
           setTensTargetIndex(0);
           setTensSuccessCount(0);
 
-          setFeedback("Retour à zéro ! 🔄 Maintenant c'est à toi de jouer !");
+          setFeedback("Retour à zéro ! 🔄 À toi de jouer maintenant !");
 
-          // Lancement du premier défi des dizaines
           setTimeout(() => {
             setPhase('challenge-tens-1');
             const firstTarget = TENS_CHALLENGES[0].targets[0];
             setFeedback(`🎯 DÉFI 1 : Affiche le nombre **${firstTarget}** avec les boutons, puis clique sur VALIDER !`);
           }, FEEDBACK_DELAY);
         }, COUNT_SPEED * 3);
-
       }
     }
 
     return () => clearTimeout(timer);
-  }, [phase, isCountingAutomatically, columns]);
+  }, [phase, isCountingAutomatically, columns, sequenceFeedback]);
 
 
   // --- LOGIQUE AJOUTER (HANDLE ADD) ---
@@ -264,7 +344,7 @@ function MachineANombres() {
   if (isCountingAutomatically || isTransitioningToChallenge) return;
 
     // Restrictions générales
-    if (phase !== 'normal' && !isUnitsColumn(idx) && phase !== 'learn-carry' && phase !== 'challenge-learn-unit' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'click-add' && phase !== 'challenge-tens-1' && phase !== 'challenge-tens-2' && phase !== 'challenge-tens-3') {
+    if (phase !== 'normal' && !isUnitsColumn(idx) && phase !== 'learn-carry' && phase !== 'challenge-unit-1' && phase !== 'challenge-unit-2' && phase !== 'challenge-unit-3' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'click-add' && phase !== 'challenge-tens-1' && phase !== 'challenge-tens-2' && phase !== 'challenge-tens-3' && phase !== 'learn-tens-combination') {
       setFeedback("Concentrons-nous sur la colonne des Unités pour l'instant. Clique uniquement sur les boutons VERT (△) ou ROUGE (∇) de cette colonne pour continuer la mission !");
       return;
     }
@@ -373,8 +453,11 @@ function MachineANombres() {
           const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
           setColumns(resetCols);
           setAddClicks(0);
-          setPhase('challenge-learn-unit');
-          setFeedback(`DÉFI : Affiche le nombre **${CHALLENGE_LEARN_GOAL}** avec les boutons, puis clique sur VALIDER !`);
+          setUnitTargetIndex(0);
+          setUnitSuccessCount(0);
+          setPhase('challenge-unit-1');
+          const firstTarget = UNIT_CHALLENGES[0].targets[0];
+          setFeedback(`🎯 DÉFI 1 : Affiche le nombre **${firstTarget}** avec les boutons, puis clique sur VALIDER !`);
           setIsTransitioningToChallenge(false);
         }, FEEDBACK_DELAY * 2);
 
@@ -394,10 +477,18 @@ function MachineANombres() {
 
     }
 
-    // D. challenge-learn-unit (surveillance du dépassement)
-    else if (phase === 'challenge-learn-unit' && newCols[0].value > CHALLENGE_LEARN_GOAL) {
-      setFeedback(`Oups ! Tu as dépassé ${CHALLENGE_LEARN_GOAL}. Utilise ∇ pour revenir à ${CHALLENGE_LEARN_GOAL} !`);
-      setColumns(newCols);
+    // D. Unit challenges (surveillance du dépassement)
+    const unitChallengePhases = ['challenge-unit-1', 'challenge-unit-2', 'challenge-unit-3'] as const;
+    if (unitChallengePhases.includes(phase as typeof unitChallengePhases[number])) {
+      const challengeIndex = unitChallengePhases.indexOf(phase as typeof unitChallengePhases[number]);
+      const challenge = UNIT_CHALLENGES[challengeIndex];
+      const targetNumber = challenge.targets[unitTargetIndex];
+      
+      if (newCols[0].value > targetNumber) {
+        setFeedback(`Oups ! Tu as dépassé ${targetNumber}. Utilise ∇ pour revenir à ${targetNumber} !`);
+        setColumns(newCols);
+        return;
+      }
     }
 
     // E. learn-carry
@@ -447,7 +538,7 @@ function MachineANombres() {
     if (isCountingAutomatically) return;
 
     // Restrictions des clics non Unités pendant le tutoriel
-    if (phase !== 'normal' && !isUnitsColumn(idx) && phase !== 'challenge-learn-unit' && phase !== 'click-remove' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'challenge-tens-1' && phase !== 'challenge-tens-2' && phase !== 'challenge-tens-3') {
+    if (phase !== 'normal' && !isUnitsColumn(idx) && phase !== 'challenge-unit-1' && phase !== 'challenge-unit-2' && phase !== 'challenge-unit-3' && phase !== 'click-remove' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'challenge-tens-1' && phase !== 'challenge-tens-2' && phase !== 'challenge-tens-3' && phase !== 'learn-tens-combination') {
       setFeedback("Concentrons-nous sur la colonne des Unités pour l'instant. Clique uniquement sur les boutons VERT (△) ou ROUGE (∇) de cette colonne pour continuer la mission !");
       return;
     }
@@ -488,7 +579,7 @@ function MachineANombres() {
     if (tempTotalBefore > 0) {
       setColumns(newCols);
 
-      if (phase !== 'click-remove' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'challenge-learn-unit') {
+      if (phase !== 'click-remove' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'challenge-unit-1' && phase !== 'challenge-unit-2' && phase !== 'challenge-unit-3') {
         setFeedback(`🎈 ${newCols[idx].value} bille${newCols[idx].value > 1 ? 's' : ''} dans ${newCols[idx].name}. Clique sur △ ou ∇ !`);
       }
     }
@@ -577,8 +668,11 @@ function MachineANombres() {
           // Débloquer la colonne des dizaines pour préparer le défi
           const newCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
           setColumns(newCols);
-          setPhase('challenge-learn-unit');
-          setFeedback(`Bravo ! 🎉 Maintenant, DÉFI : Affiche le nombre **${CHALLENGE_LEARN_GOAL}** avec les boutons, puis clique sur VALIDER !`);
+          setUnitTargetIndex(0);
+          setUnitSuccessCount(0);
+          setPhase('challenge-unit-1');
+          const firstTarget = UNIT_CHALLENGES[0].targets[0];
+          setFeedback(`Bravo ! 🎉 Maintenant, DÉFI 1 : Affiche le nombre **${firstTarget}** avec les boutons, puis clique sur VALIDER !`);
         }, FEEDBACK_DELAY);
       } else if (unitsValue > 0) {
         sequenceFeedback(
@@ -595,26 +689,67 @@ function MachineANombres() {
   }, [columns, phase, isUnitsColumn, totalNumber, isCountingAutomatically, sequenceFeedback]);
 
 
-  // --- LOGIQUE BOUTON VALIDER DU DÉFI D'APPRENTISSAGE (9) ---
+  // --- LOGIQUE BOUTON VALIDER DES DÉFIS DES UNITÉS ---
   const handleValidateLearning = useCallback(() => {
-    if (phase === 'challenge-learn-unit') {
-      if (columns[0].value === CHALLENGE_LEARN_GOAL) {
-        setFeedback("DÉFI RÉUSSI ! Bravo ! 🎉 Prépare-toi pour l'échange magique !");
+    const challengePhases = ['challenge-unit-1', 'challenge-unit-2', 'challenge-unit-3'] as const;
+    const challengeIndex = challengePhases.indexOf(phase as typeof challengePhases[number]);
+    
+    if (challengeIndex === -1) return;
 
-        // Transition vers la phase 'learn-carry'
-        setTimeout(() => {
-          setPhase('learn-carry');
-          // Afficher un premier message, puis un rappel après un court délai
-          sequenceFeedback(
-            "Prêt pour la magie ? 🎩 Clique sur △ pour l'échange 10 pour 1 !",
-            "Vas-y ! Clique sur △ pour voir la transformation !"
-          );
-        }, FEEDBACK_DELAY);
+    const challenge = UNIT_CHALLENGES[challengeIndex];
+    const targetNumber = challenge.targets[unitTargetIndex];
+    const currentNumber = columns[0].value;
+
+    if (currentNumber === targetNumber) {
+      const newSuccessCount = unitSuccessCount + 1;
+      setUnitSuccessCount(newSuccessCount);
+
+      // Si tous les nombres du défi actuel sont validés
+      if (unitTargetIndex + 1 >= challenge.targets.length) {
+        // Si c'est le dernier défi
+        if (challengeIndex === UNIT_CHALLENGES.length - 1) {
+          setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les unités !");
+          
+          setTimeout(() => {
+            setPhase('learn-carry');
+            sequenceFeedback(
+              "Prêt pour la magie ? 🎩 Clique sur △ pour l'échange 10 pour 1 !",
+              "Vas-y ! Clique sur △ pour voir la transformation !"
+            );
+          }, FEEDBACK_DELAY);
+        } else {
+          // Passer au défi suivant
+          setFeedback(`✅ DÉFI ${challengeIndex + 1} TERMINÉ ! Bravo !`);
+          
+          setTimeout(() => {
+            const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+            setColumns(resetCols);
+            setUnitTargetIndex(0);
+            setUnitSuccessCount(0);
+            
+            const nextPhase = challengePhases[challengeIndex + 1];
+            setPhase(nextPhase);
+            const firstTarget = UNIT_CHALLENGES[challengeIndex + 1].targets[0];
+            setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${firstTarget}** puis clique sur VALIDER !`);
+          }, FEEDBACK_DELAY);
+        }
       } else {
-        setFeedback(`Pas encore ! Il faut ${CHALLENGE_LEARN_GOAL}. Utilise △ et ∇ !`);
+        // Nombre validé, passer au suivant dans le même défi
+        setFeedback("✅ Correct ! Bravo !");
+        
+        setTimeout(() => {
+          const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+          setColumns(resetCols);
+          setUnitTargetIndex(unitTargetIndex + 1);
+          
+          const nextTarget = challenge.targets[unitTargetIndex + 1];
+          setFeedback(`🎯 DÉFI ${challengeIndex + 1} : Affiche le nombre **${nextTarget}** puis clique sur VALIDER ! (${newSuccessCount}/${challenge.targets.length})`);
+        }, FEEDBACK_DELAY);
       }
+    } else {
+      setFeedback(`Pas encore ! Il faut ${targetNumber}. Utilise △ et ∇ !`);
     }
-  }, [phase, columns, sequenceFeedback]);
+  }, [phase, columns, unitTargetIndex, unitSuccessCount, sequenceFeedback]);
 
 
   // --- LOGIQUE BOUTON VALIDER DES DÉFIS DES DIZAINES ---
@@ -700,7 +835,7 @@ function MachineANombres() {
       const newCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
       setColumns(newCols);
 
-  setNextPhaseAfterAuto('challenge-learn-unit');
+  setNextPhaseAfterAuto('challenge-unit-1');
   setPhase('learn-units');
   setPendingAutoCount(true);
   setIsCountingAutomatically(false);
@@ -766,12 +901,20 @@ function MachineANombres() {
         return "Génial ! Clique sur 'Commencer l'apprentissage' pour découvrir l'échange 10 pour 1 ! 🎩";
       case 'learn-units':
         return "Regarde ! 👀 La machine compte de 1 à 9. Compte avec tes doigts !";
-      case 'challenge-learn-unit':
-        return `DÉFI : Affiche le nombre **${CHALLENGE_LEARN_GOAL}** puis clique sur VALIDER !`;
+      case 'challenge-unit-1':
+      case 'challenge-unit-2':
+      case 'challenge-unit-3': {
+        const challengeIndex = ['challenge-unit-1', 'challenge-unit-2', 'challenge-unit-3'].indexOf(phase);
+        const challenge = UNIT_CHALLENGES[challengeIndex];
+        const targetNumber = challenge.targets[unitTargetIndex];
+        return `DÉFI ${challengeIndex + 1} : Affiche **${targetNumber}** puis clique sur VALIDER ! (${unitSuccessCount}/${challenge.targets.length})`;
+      }
       case 'learn-carry':
         return "C'est le grand moment ! 🎆 Clique sur △ pour voir la transformation !";
       case 'learn-tens':
         return "Regarde ! 👀 La machine compte par dizaines : 10, 20, 30...";
+      case 'learn-tens-combination':
+        return "🎯 Observe comment on combine dizaines et unités pour former des nombres !";
       case 'challenge-tens-1':
       case 'challenge-tens-2':
       case 'challenge-tens-3': {
@@ -785,7 +928,7 @@ function MachineANombres() {
       default:
         return "Prépare-toi pour l'aventure des nombres !";
     }
-  }, [phase, tensTargetIndex, tensSuccessCount]);
+  }, [phase, unitTargetIndex, unitSuccessCount, tensTargetIndex, tensSuccessCount]);
 
   // Typing queue to ensure messages are typed one after another
   const queueRef = useRef<Array<{ kind: 'instruction' | 'feedback'; text: string }>>([]);
@@ -857,10 +1000,10 @@ function MachineANombres() {
 
   // --- Démarrage du compteur auto après le texte d'observation ---
   useEffect(() => {
-    // On veut démarrer le comptage auto uniquement après la phase 'learn-units' ou 'learn-tens',
+    // On veut démarrer le comptage auto uniquement après la phase 'learn-units', 'learn-tens' ou 'learn-tens-combination',
     // lorsque toutes les animations de texte sont terminées
     if (
-      (phase === 'learn-units' || phase === 'learn-tens') &&
+      (phase === 'learn-units' || phase === 'learn-tens' || phase === 'learn-tens-combination') &&
       pendingAutoCount &&
       !isCountingAutomatically &&
       !isTypingInstruction &&
@@ -874,7 +1017,7 @@ function MachineANombres() {
   const allColumnsUnlocked = columns.every(col => col.unlocked);
   const showUnlockButton = phase === 'normal' && !allColumnsUnlocked;
   const showStartLearningButton = phase === 'done';
-  const showValidateLearningButton = phase === 'challenge-learn-unit';
+  const showValidateLearningButton = phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3';
   const showValidateTensButton = phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3';
 
   // --- Rendu des jetons visuels ---
@@ -944,7 +1087,7 @@ function MachineANombres() {
               if (phase === 'normal') {
                 isInteractive = true;
               }
-              else if ((phase === 'tutorial' || phase === 'explore-units' || phase === 'click-add' || phase === 'click-remove' || phase === 'challenge-learn-unit') && isUnit) {
+              else if ((phase === 'tutorial' || phase === 'explore-units' || phase === 'click-add' || phase === 'click-remove' || phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3') && isUnit) {
                 isInteractive = true;
               }
               else if (phase === 'learn-carry' && isUnit) {
@@ -1038,38 +1181,45 @@ function MachineANombres() {
         </div>
 
         {/* BOUTON VALIDER (Défi d'apprentissage 5) */}
-        {showValidateLearningButton && (
-          <div style={{ marginTop: 20, textAlign: 'center' }}>
-            <button
-              onClick={handleValidateLearning}
-              style={{
-                fontSize: 16,
-                padding: '10px 30px',
-                background: columns[0].value === CHALLENGE_LEARN_GOAL
-                  ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
-                  : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                boxShadow: columns[0].value === CHALLENGE_LEARN_GOAL
-                  ? '0 4px 8px rgba(34, 197, 94, 0.3)'
-                  : '0 4px 8px rgba(249, 115, 22, 0.3)',
-                transition: 'all 0.2s ease',
-                animation: columns[0].value === CHALLENGE_LEARN_GOAL ? 'celebration 0.6s ease-in-out infinite' : 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              {columns[0].value === CHALLENGE_LEARN_GOAL ? ' VALIDER LE DÉFI ' : '🎯 VALIDER LE DÉFI'}
-            </button>
-          </div>
-        )}
+        {showValidateLearningButton && (() => {
+          const challengeIndex = ['challenge-unit-1', 'challenge-unit-2', 'challenge-unit-3'].indexOf(phase as string);
+          const challenge = UNIT_CHALLENGES[challengeIndex];
+          const targetNumber = challenge.targets[unitTargetIndex];
+          const isCorrect = columns[0].value === targetNumber;
+          
+          return (
+            <div style={{ marginTop: 20, textAlign: 'center' }}>
+              <button
+                onClick={handleValidateLearning}
+                style={{
+                  fontSize: 16,
+                  padding: '10px 30px',
+                  background: isCorrect
+                    ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                    : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  boxShadow: isCorrect
+                    ? '0 4px 8px rgba(34, 197, 94, 0.3)'
+                    : '0 4px 8px rgba(249, 115, 22, 0.3)',
+                  transition: 'all 0.2s ease',
+                  animation: isCorrect ? 'celebration 0.6s ease-in-out infinite' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                {isCorrect ? '✅ VALIDER LE DÉFI' : '🎯 VALIDER LE DÉFI'}
+              </button>
+            </div>
+          );
+        })()}
 
         {/* BOUTON VALIDER (Défis des dizaines) */}
         {showValidateTensButton && (() => {
@@ -1206,16 +1356,16 @@ function MachineANombres() {
             fontWeight: 'bold',
             color: '#fff',
             background: phase === 'done' ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' :
-              (phase === 'learn-units' || phase === 'challenge-learn-unit' || phase === 'learn-carry' || phase === 'learn-tens' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3' ? 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)' :
+              (phase === 'learn-units' || phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3' || phase === 'learn-carry' || phase === 'learn-tens' || phase === 'learn-tens-combination' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3' ? 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)' :
                 (phase === 'tutorial' ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)')),
             padding: '8px 12px',
             borderRadius: 20,
             textAlign: 'center',
             boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-            animation: (phase === 'challenge-learn-unit' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3') ? 'pulse 2s ease-in-out infinite' : 'none'
+            animation: (phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3') ? 'pulse 2s ease-in-out infinite' : 'none'
           }}>
             {phase === 'done' ? ' Tutoriel Terminé !' :
-              (phase === 'learn-units' || phase === 'challenge-learn-unit' || phase === 'learn-carry' || phase === 'learn-tens' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3') ? '💡 Apprentissage en cours' :
+              (phase === 'learn-units' || phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3' || phase === 'learn-carry' || phase === 'learn-tens' || phase === 'learn-tens-combination' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3') ? '💡 Apprentissage en cours' :
                 phase === 'tutorial' ? ' Découverte de la machine' : '📚 Exploration'}
           </div>
         )}
