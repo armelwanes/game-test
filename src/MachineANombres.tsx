@@ -10,7 +10,10 @@ interface Column {
 // Phases du flux d'apprentissage
 type Phase = 'tutorial' | 'explore-units' | 'click-add' | 'click-remove' | 'done' |
   'learn-units' | 'challenge-unit-1' | 'challenge-unit-2' | 'challenge-unit-3' | 'learn-carry' | 
-  'learn-tens' | 'learn-tens-combination' | 'challenge-tens-1' | 'challenge-tens-2' | 'challenge-tens-3' | 'normal';
+  'learn-tens' | 'learn-tens-combination' | 'challenge-tens-1' | 'challenge-tens-2' | 'challenge-tens-3' | 
+  'learn-hundreds' | 'learn-hundreds-combination' | 'challenge-hundreds-1' | 'challenge-hundreds-2' | 'challenge-hundreds-3' |
+  'learn-thousands' | 'learn-thousands-combination' | 'challenge-thousands-1' | 'challenge-thousands-2' | 'challenge-thousands-3' |
+  'normal';
 
 const COLUMN_NAMES = ["Unités", "Dizaines", "Centaines", "Milliers"];
 const TYPING_SPEED = 18;
@@ -31,6 +34,20 @@ const TENS_CHALLENGES = [
   { phase: 'challenge-tens-1' as const, targets: [23, 45] },           // 2 nombres
   { phase: 'challenge-tens-2' as const, targets: [12, 34, 56, 78] },  // 4 nombres
   { phase: 'challenge-tens-3' as const, targets: [21, 43, 65, 87, 19, 92] }  // 6 nombres
+];
+
+// Défis pour les centaines - progression graduelle
+const HUNDREDS_CHALLENGES = [
+  { phase: 'challenge-hundreds-1' as const, targets: [123, 456] },           // 2 nombres
+  { phase: 'challenge-hundreds-2' as const, targets: [234, 567, 321, 789] },  // 4 nombres
+  { phase: 'challenge-hundreds-3' as const, targets: [145, 268, 392, 514, 637, 851] }  // 6 nombres
+];
+
+// Défis pour les milliers - progression graduelle
+const THOUSANDS_CHALLENGES = [
+  { phase: 'challenge-thousands-1' as const, targets: [1234, 5678] },           // 2 nombres
+  { phase: 'challenge-thousands-2' as const, targets: [2345, 6789, 3210, 7890] },  // 4 nombres
+  { phase: 'challenge-thousands-3' as const, targets: [1456, 2789, 3921, 5147, 6372, 8519] }  // 6 nombres
 ];
 
 const initialColumns: Column[] = COLUMN_NAMES.map((name, idx) => ({
@@ -71,6 +88,14 @@ function MachineANombres() {
   // État pour les défis des dizaines
   const [tensTargetIndex, setTensTargetIndex] = useState(0); // Index du nombre cible actuel
   const [tensSuccessCount, setTensSuccessCount] = useState(0); // Nombre de réussites dans le défi actuel
+
+  // État pour les défis des centaines
+  const [hundredsTargetIndex, setHundredsTargetIndex] = useState(0);
+  const [hundredsSuccessCount, setHundredsSuccessCount] = useState(0);
+
+  // État pour les défis des milliers
+  const [thousandsTargetIndex, setThousandsTargetIndex] = useState(0);
+  const [thousandsSuccessCount, setThousandsSuccessCount] = useState(0);
 
   const totalNumber = useMemo(() =>
     columns.reduce((acc, col, idx) => acc + col.value * Math.pow(10, idx), 0),
@@ -180,7 +205,8 @@ function MachineANombres() {
     }
 
     return () => clearTimeout(timer);
-  }, [phase, isCountingAutomatically, columns, nextPhaseAfterAuto, sequenceFeedback]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isCountingAutomatically, columns[0].value, nextPhaseAfterAuto]);
 
 
   // 🚀 EFFECT : Gère l'auto-comptage pour les dizaines (10, 20, 30, ... 90)
@@ -193,9 +219,11 @@ function MachineANombres() {
 
       // S'assurer que les unités sont à 0 pour l'apprentissage des dizaines
       if (unitsValue !== 0) {
-        const newCols = [...columns];
-        newCols[0].value = 0;
-        setColumns(newCols);
+        setColumns(prevCols => {
+          const newCols = [...prevCols];
+          newCols[0].value = 0;
+          return newCols;
+        });
         return;
       }
 
@@ -334,7 +362,342 @@ function MachineANombres() {
     }
 
     return () => clearTimeout(timer);
-  }, [phase, isCountingAutomatically, columns, sequenceFeedback]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isCountingAutomatically, columns[0].value, columns[1].value]);
+
+
+  // 🚀 EFFECT : Gère l'auto-comptage pour les centaines (100, 200, 300, ... 900)
+  useEffect(() => {
+    let timer: number | undefined;
+
+    if (phase === 'learn-hundreds' && isCountingAutomatically) {
+      const hundredsValue = columns[2].value;
+      const tensValue = columns[1].value;
+      const unitsValue = columns[0].value;
+
+      // S'assurer que les dizaines et unités sont à 0
+      if (unitsValue !== 0 || tensValue !== 0) {
+        setColumns(prevCols => {
+          const newCols = [...prevCols];
+          newCols[0].value = 0;
+          newCols[1].value = 0;
+          return newCols;
+        });
+        return;
+      }
+
+      // PARTIE A: COMPTAGE des centaines (0 à 8)
+      if (hundredsValue < 9) {
+        const speed = COUNT_SPEED;
+        const nextValue = hundredsValue + 1;
+
+        timer = setTimeout(() => {
+          setColumns(prevCols => {
+            const newCols = [...prevCols];
+            if (newCols[2].value === hundredsValue && newCols[1].value === 0 && newCols[0].value === 0) {
+              newCols[2].value++;
+            }
+            return newCols;
+          });
+
+          let infoMessage = "";
+          const displayNumber = nextValue * 100;
+          if (nextValue === 1) {
+            infoMessage = `**${displayNumber}** (CENT) ! 🎯 Une centaine = 100 unités !`;
+          } else if (nextValue === 2) {
+            infoMessage = `**${displayNumber}** (DEUX-CENTS) ! Deux centaines = 200 unités !`;
+          } else if (nextValue === 3) {
+            infoMessage = `**${displayNumber}** (TROIS-CENTS) ! Trois paquets de 100 !`;
+          } else if (nextValue === 4) {
+            infoMessage = `**${displayNumber}** (QUATRE-CENTS) ! Quatre centaines !`;
+          } else if (nextValue === 5) {
+            infoMessage = `**${displayNumber}** (CINQ-CENTS) ! La moitié de 1000 ! ✋`;
+          } else if (nextValue === 6) {
+            infoMessage = `**${displayNumber}** (SIX-CENTS) ! Six centaines !`;
+          } else if (nextValue === 7) {
+            infoMessage = `**${displayNumber}** (SEPT-CENTS) ! Sept centaines !`;
+          } else if (nextValue === 8) {
+            infoMessage = `**${displayNumber}** (HUIT-CENTS) ! Huit centaines !`;
+          } else if (nextValue === 9) {
+            infoMessage = `**${displayNumber}** (NEUF-CENTS) ! 🎯 Presque 1000 !`;
+          }
+
+          setFeedback(infoMessage);
+
+        }, speed);
+
+      }
+
+      // PARTIE B: ARRÊT À 900 (9 centaines) et RESET
+      else if (hundredsValue === 9) {
+        setFeedback("STOP ! 🛑 Le compteur est à 900. Tu as vu tous les nombres avec les centaines ! Bravo !");
+
+        // Reset et Transition vers la phase de combinaison
+        timer = setTimeout(() => {
+          const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
+          setColumns(resetCols);
+          setIsCountingAutomatically(false);
+
+          setFeedback("Retour à zéro ! 🔄 Maintenant on va apprendre à combiner les centaines, dizaines et unités !");
+
+          // Lancement de la phase de combinaison
+          setTimeout(() => {
+            setPhase('learn-hundreds-combination');
+            setPendingAutoCount(true);
+            setIsCountingAutomatically(false);
+            sequenceFeedback(
+              "🎯 Apprends à combiner ! Par exemple : 2 centaines + 3 dizaines + 4 unités = 234 !",
+              "Regarde bien : la machine va te montrer des exemples !"
+            );
+          }, FEEDBACK_DELAY);
+        }, COUNT_SPEED * 3);
+
+      }
+    }
+
+    // Auto-comptage pour learn-hundreds-combination (exemples de combinaisons)
+    if (phase === 'learn-hundreds-combination' && isCountingAutomatically) {
+      const hundredsValue = columns[2].value;
+      const tensValue = columns[1].value;
+      const unitsValue = columns[0].value;
+
+      // Exemples à montrer: 123, 234, 345, 456, 567, 678
+      const examples = [
+        { hundreds: 1, tens: 2, units: 3, name: "CENT-VINGT-TROIS" },
+        { hundreds: 2, tens: 3, units: 4, name: "DEUX-CENT-TRENTE-QUATRE" },
+        { hundreds: 3, tens: 4, units: 5, name: "TROIS-CENT-QUARANTE-CINQ" },
+        { hundreds: 4, tens: 5, units: 6, name: "QUATRE-CENT-CINQUANTE-SIX" },
+        { hundreds: 5, tens: 6, units: 7, name: "CINQ-CENT-SOIXANTE-SEPT" },
+        { hundreds: 6, tens: 7, units: 8, name: "SIX-CENT-SOIXANTE-DIX-HUIT" }
+      ];
+
+      // Trouver l'index de l'exemple actuel
+      const currentExampleIndex = examples.findIndex(
+        ex => ex.hundreds === hundredsValue && ex.tens === tensValue && ex.units === unitsValue
+      );
+      
+      if (currentExampleIndex === -1) {
+        // Initialiser au premier exemple
+        timer = setTimeout(() => {
+          setColumns(prevCols => {
+            const newCols = [...prevCols];
+            newCols[2].value = examples[0].hundreds;
+            newCols[1].value = examples[0].tens;
+            newCols[0].value = examples[0].units;
+            return newCols;
+          });
+          const total = examples[0].hundreds * 100 + examples[0].tens * 10 + examples[0].units;
+          setFeedback(`**${total}** (${examples[0].name}) ! ${examples[0].hundreds} centaine${examples[0].hundreds > 1 ? 's' : ''} + ${examples[0].tens} dizaine${examples[0].tens > 1 ? 's' : ''} + ${examples[0].units} unité${examples[0].units > 1 ? 's' : ''} = ${total} !`);
+        }, COUNT_SPEED);
+      } else if (currentExampleIndex < examples.length - 1) {
+        // Passer à l'exemple suivant
+        timer = setTimeout(() => {
+          const nextExample = examples[currentExampleIndex + 1];
+          setColumns(prevCols => {
+            const newCols = [...prevCols];
+            newCols[2].value = nextExample.hundreds;
+            newCols[1].value = nextExample.tens;
+            newCols[0].value = nextExample.units;
+            return newCols;
+          });
+          const total = nextExample.hundreds * 100 + nextExample.tens * 10 + nextExample.units;
+          setFeedback(`**${total}** (${nextExample.name}) ! ${nextExample.hundreds} centaine${nextExample.hundreds > 1 ? 's' : ''} + ${nextExample.tens} dizaine${nextExample.tens > 1 ? 's' : ''} + ${nextExample.units} unité${nextExample.units > 1 ? 's' : ''} = ${total} !`);
+        }, COUNT_SPEED);
+      } else {
+        // Fin des exemples, transition vers les défis
+        setFeedback("Bravo ! 🎉 Tu as vu comment combiner centaines, dizaines et unités ! Maintenant c'est à toi !");
+        
+        timer = setTimeout(() => {
+          const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
+          setColumns(resetCols);
+          setIsCountingAutomatically(false);
+          setHundredsTargetIndex(0);
+          setHundredsSuccessCount(0);
+
+          setFeedback("Retour à zéro ! 🔄 À toi de jouer maintenant !");
+
+          setTimeout(() => {
+            setPhase('challenge-hundreds-1');
+            const firstTarget = HUNDREDS_CHALLENGES[0].targets[0];
+            setFeedback(`🎯 DÉFI 1 : Affiche le nombre **${firstTarget}** avec les boutons, puis clique sur VALIDER !`);
+          }, FEEDBACK_DELAY);
+        }, COUNT_SPEED * 3);
+      }
+    }
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isCountingAutomatically, columns[0].value, columns[1].value, columns[2].value]);
+
+
+  // 🚀 EFFECT : Gère l'auto-comptage pour les milliers (1000, 2000, 3000, ... 9000)
+  useEffect(() => {
+    let timer: number | undefined;
+
+    if (phase === 'learn-thousands' && isCountingAutomatically) {
+      const thousandsValue = columns[3].value;
+      const hundredsValue = columns[2].value;
+      const tensValue = columns[1].value;
+      const unitsValue = columns[0].value;
+
+      // S'assurer que les centaines, dizaines et unités sont à 0
+      if (unitsValue !== 0 || tensValue !== 0 || hundredsValue !== 0) {
+        setColumns(prevCols => {
+          const newCols = [...prevCols];
+          newCols[0].value = 0;
+          newCols[1].value = 0;
+          newCols[2].value = 0;
+          return newCols;
+        });
+        return;
+      }
+
+      // PARTIE A: COMPTAGE des milliers (0 à 8)
+      if (thousandsValue < 9) {
+        const speed = COUNT_SPEED;
+        const nextValue = thousandsValue + 1;
+
+        timer = setTimeout(() => {
+          setColumns(prevCols => {
+            const newCols = [...prevCols];
+            if (newCols[3].value === thousandsValue && newCols[2].value === 0 && newCols[1].value === 0 && newCols[0].value === 0) {
+              newCols[3].value++;
+            }
+            return newCols;
+          });
+
+          let infoMessage = "";
+          const displayNumber = nextValue * 1000;
+          if (nextValue === 1) {
+            infoMessage = `**${displayNumber}** (MILLE) ! 🎯 Un millier = 1000 unités !`;
+          } else if (nextValue === 2) {
+            infoMessage = `**${displayNumber}** (DEUX-MILLE) ! Deux milliers = 2000 unités !`;
+          } else if (nextValue === 3) {
+            infoMessage = `**${displayNumber}** (TROIS-MILLE) ! Trois paquets de 1000 !`;
+          } else if (nextValue === 4) {
+            infoMessage = `**${displayNumber}** (QUATRE-MILLE) ! Quatre milliers !`;
+          } else if (nextValue === 5) {
+            infoMessage = `**${displayNumber}** (CINQ-MILLE) ! La moitié de 10000 ! ✋`;
+          } else if (nextValue === 6) {
+            infoMessage = `**${displayNumber}** (SIX-MILLE) ! Six milliers !`;
+          } else if (nextValue === 7) {
+            infoMessage = `**${displayNumber}** (SEPT-MILLE) ! Sept milliers !`;
+          } else if (nextValue === 8) {
+            infoMessage = `**${displayNumber}** (HUIT-MILLE) ! Huit milliers !`;
+          } else if (nextValue === 9) {
+            infoMessage = `**${displayNumber}** (NEUF-MILLE) ! 🎯 Tu maîtrises les grands nombres !`;
+          }
+
+          setFeedback(infoMessage);
+
+        }, speed);
+
+      }
+
+      // PARTIE B: ARRÊT À 9000 (9 milliers) et RESET
+      else if (thousandsValue === 9) {
+        setFeedback("STOP ! 🛑 Le compteur est à 9000. Tu as vu tous les nombres avec les milliers ! Bravo !");
+
+        // Reset et Transition vers la phase de combinaison
+        timer = setTimeout(() => {
+          const resetCols = columns.map(col => ({ ...col, unlocked: true }));
+          setColumns(resetCols);
+          setIsCountingAutomatically(false);
+
+          setFeedback("Retour à zéro ! 🔄 Maintenant on va apprendre à combiner tous les chiffres !");
+
+          // Lancement de la phase de combinaison
+          setTimeout(() => {
+            setPhase('learn-thousands-combination');
+            setPendingAutoCount(true);
+            setIsCountingAutomatically(false);
+            sequenceFeedback(
+              "🎯 Apprends à combiner ! Par exemple : 1 millier + 2 centaines + 3 dizaines + 4 unités = 1234 !",
+              "Regarde bien : la machine va te montrer des exemples !"
+            );
+          }, FEEDBACK_DELAY);
+        }, COUNT_SPEED * 3);
+
+      }
+    }
+
+    // Auto-comptage pour learn-thousands-combination (exemples de combinaisons)
+    if (phase === 'learn-thousands-combination' && isCountingAutomatically) {
+      const thousandsValue = columns[3].value;
+      const hundredsValue = columns[2].value;
+      const tensValue = columns[1].value;
+      const unitsValue = columns[0].value;
+
+      // Exemples à montrer: 1234, 2345, 3456, 4567, 5678, 6789
+      const examples = [
+        { thousands: 1, hundreds: 2, tens: 3, units: 4, name: "MILLE-DEUX-CENT-TRENTE-QUATRE" },
+        { thousands: 2, hundreds: 3, tens: 4, units: 5, name: "DEUX-MILLE-TROIS-CENT-QUARANTE-CINQ" },
+        { thousands: 3, hundreds: 4, tens: 5, units: 6, name: "TROIS-MILLE-QUATRE-CENT-CINQUANTE-SIX" },
+        { thousands: 4, hundreds: 5, tens: 6, units: 7, name: "QUATRE-MILLE-CINQ-CENT-SOIXANTE-SEPT" },
+        { thousands: 5, hundreds: 6, tens: 7, units: 8, name: "CINQ-MILLE-SIX-CENT-SOIXANTE-DIX-HUIT" },
+        { thousands: 6, hundreds: 7, tens: 8, units: 9, name: "SIX-MILLE-SEPT-CENT-QUATRE-VINGT-NEUF" }
+      ];
+
+      // Trouver l'index de l'exemple actuel
+      const currentExampleIndex = examples.findIndex(
+        ex => ex.thousands === thousandsValue && ex.hundreds === hundredsValue && 
+              ex.tens === tensValue && ex.units === unitsValue
+      );
+      
+      if (currentExampleIndex === -1) {
+        // Initialiser au premier exemple
+        timer = setTimeout(() => {
+          setColumns(prevCols => {
+            const newCols = [...prevCols];
+            newCols[3].value = examples[0].thousands;
+            newCols[2].value = examples[0].hundreds;
+            newCols[1].value = examples[0].tens;
+            newCols[0].value = examples[0].units;
+            return newCols;
+          });
+          const total = examples[0].thousands * 1000 + examples[0].hundreds * 100 + examples[0].tens * 10 + examples[0].units;
+          setFeedback(`**${total}** (${examples[0].name}) ! Un nombre géant !`);
+        }, COUNT_SPEED);
+      } else if (currentExampleIndex < examples.length - 1) {
+        // Passer à l'exemple suivant
+        timer = setTimeout(() => {
+          const nextExample = examples[currentExampleIndex + 1];
+          setColumns(prevCols => {
+            const newCols = [...prevCols];
+            newCols[3].value = nextExample.thousands;
+            newCols[2].value = nextExample.hundreds;
+            newCols[1].value = nextExample.tens;
+            newCols[0].value = nextExample.units;
+            return newCols;
+          });
+          const total = nextExample.thousands * 1000 + nextExample.hundreds * 100 + nextExample.tens * 10 + nextExample.units;
+          setFeedback(`**${total}** (${nextExample.name}) ! Un nombre géant !`);
+        }, COUNT_SPEED);
+      } else {
+        // Fin des exemples, transition vers les défis
+        setFeedback("Bravo ! 🎉 Tu as vu comment combiner tous les chiffres ! Maintenant c'est à toi !");
+        
+        timer = setTimeout(() => {
+          const resetCols = columns.map(col => ({ ...col, unlocked: true }));
+          setColumns(resetCols);
+          setIsCountingAutomatically(false);
+          setThousandsTargetIndex(0);
+          setThousandsSuccessCount(0);
+
+          setFeedback("Retour à zéro ! 🔄 À toi de jouer maintenant !");
+
+          setTimeout(() => {
+            setPhase('challenge-thousands-1');
+            const firstTarget = THOUSANDS_CHALLENGES[0].targets[0];
+            setFeedback(`🎯 DÉFI 1 : Affiche le nombre **${firstTarget}** avec les boutons, puis clique sur VALIDER !`);
+          }, FEEDBACK_DELAY);
+        }, COUNT_SPEED * 3);
+      }
+    }
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isCountingAutomatically, columns[0].value, columns[1].value, columns[2].value, columns[3].value]);
 
 
   // --- LOGIQUE AJOUTER (HANDLE ADD) ---
@@ -343,9 +706,19 @@ function MachineANombres() {
   // Blocage du clic manuel pendant l'auto-comptage ou la transition vers le défi
   if (isCountingAutomatically || isTransitioningToChallenge) return;
 
-    // Restrictions générales
-    if (phase !== 'normal' && !isUnitsColumn(idx) && phase !== 'learn-carry' && phase !== 'challenge-unit-1' && phase !== 'challenge-unit-2' && phase !== 'challenge-unit-3' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'click-add' && phase !== 'challenge-tens-1' && phase !== 'challenge-tens-2' && phase !== 'challenge-tens-3' && phase !== 'learn-tens-combination') {
-      setFeedback("Concentrons-nous sur la colonne des Unités pour l'instant. Clique uniquement sur les boutons VERT (△) ou ROUGE (∇) de cette colonne pour continuer la mission !");
+    // Définir quelles colonnes sont interactives selon la phase
+    const isAllowedColumn = () => {
+      if (phase === 'normal') return true;
+      if (isUnitsColumn(idx)) return true; // Unités toujours actives sauf en mode normal
+      if (idx === 1 && (phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3' || phase === 'learn-tens-combination')) return true;
+      if ((idx === 1 || idx === 2) && (phase === 'challenge-hundreds-1' || phase === 'challenge-hundreds-2' || phase === 'challenge-hundreds-3' || phase === 'learn-hundreds-combination')) return true;
+      if ((idx === 1 || idx === 2 || idx === 3) && (phase === 'challenge-thousands-1' || phase === 'challenge-thousands-2' || phase === 'challenge-thousands-3' || phase === 'learn-thousands-combination')) return true;
+      if (phase === 'learn-carry') return isUnitsColumn(idx);
+      return false;
+    };
+
+    if (!isAllowedColumn()) {
+      setFeedback("Concentrons-nous sur les colonnes actives pour l'instant !");
       return;
     }
 
@@ -537,9 +910,18 @@ function MachineANombres() {
     // Blocage du clic manuel pendant l'auto-comptage
     if (isCountingAutomatically) return;
 
-    // Restrictions des clics non Unités pendant le tutoriel
-    if (phase !== 'normal' && !isUnitsColumn(idx) && phase !== 'challenge-unit-1' && phase !== 'challenge-unit-2' && phase !== 'challenge-unit-3' && phase !== 'click-remove' && phase !== 'tutorial' && phase !== 'explore-units' && phase !== 'challenge-tens-1' && phase !== 'challenge-tens-2' && phase !== 'challenge-tens-3' && phase !== 'learn-tens-combination') {
-      setFeedback("Concentrons-nous sur la colonne des Unités pour l'instant. Clique uniquement sur les boutons VERT (△) ou ROUGE (∇) de cette colonne pour continuer la mission !");
+    // Définir quelles colonnes sont interactives selon la phase
+    const isAllowedColumn = () => {
+      if (phase === 'normal') return true;
+      if (isUnitsColumn(idx)) return true;
+      if (idx === 1 && (phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3' || phase === 'learn-tens-combination')) return true;
+      if ((idx === 1 || idx === 2) && (phase === 'challenge-hundreds-1' || phase === 'challenge-hundreds-2' || phase === 'challenge-hundreds-3' || phase === 'learn-hundreds-combination')) return true;
+      if ((idx === 1 || idx === 2 || idx === 3) && (phase === 'challenge-thousands-1' || phase === 'challenge-thousands-2' || phase === 'challenge-thousands-3' || phase === 'learn-thousands-combination')) return true;
+      return false;
+    };
+
+    if (!isAllowedColumn()) {
+      setFeedback("Concentrons-nous sur les colonnes actives pour l'instant !");
       return;
     }
 
@@ -828,6 +1210,151 @@ function MachineANombres() {
   }, [phase, columns, totalNumber, tensTargetIndex, tensSuccessCount, sequenceFeedback]);
 
 
+  // --- LOGIQUE BOUTON VALIDER DES DÉFIS DES CENTAINES ---
+  const handleValidateHundreds = useCallback(() => {
+    const challengePhases = ['challenge-hundreds-1', 'challenge-hundreds-2', 'challenge-hundreds-3'] as const;
+    const challengeIndex = challengePhases.indexOf(phase as typeof challengePhases[number]);
+    
+    if (challengeIndex === -1) return;
+
+    const challenge = HUNDREDS_CHALLENGES[challengeIndex];
+    const targetNumber = challenge.targets[hundredsTargetIndex];
+    const currentNumber = totalNumber;
+
+    if (currentNumber === targetNumber) {
+      const newSuccessCount = hundredsSuccessCount + 1;
+      setHundredsSuccessCount(newSuccessCount);
+
+      // Si tous les nombres du défi actuel sont validés
+      if (hundredsTargetIndex + 1 >= challenge.targets.length) {
+        // Si c'est le dernier défi
+        if (challengeIndex === HUNDREDS_CHALLENGES.length - 1) {
+          setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les centaines !");
+          
+          // Marquer les centaines comme complétées et débloquer les milliers
+          setCompletedChallenges(prev => ({ ...prev, hundreds: true }));
+          
+          setTimeout(() => {
+            setPhase('normal');
+            const newCols = [...columns];
+            const thousandsIdx = 3;
+            if (!newCols[thousandsIdx].unlocked) {
+              newCols[thousandsIdx].unlocked = true;
+              setColumns(newCols);
+              setCompletedChallenges(prev => ({ ...prev, thousands: true }));
+            }
+            sequenceFeedback(
+              "APPRENTISSAGE DES CENTAINES TERMINÉ ! Bravo ! 🎉 Tu peux maintenant utiliser librement les nombres !",
+              "🔓 Les MILLIERS sont débloqués ! Utilise le bouton pour explorer les milliers !",
+              FEEDBACK_DELAY / 1.5
+            );
+          }, FEEDBACK_DELAY * 2);
+        } else {
+          // Passer au défi suivant
+          const nextChallenge = HUNDREDS_CHALLENGES[challengeIndex + 1];
+          setFeedback(`🎉 DÉFI ${challengeIndex + 1} RÉUSSI ! Préparé pour le prochain ?`);
+          
+          setTimeout(() => {
+            setHundredsTargetIndex(0);
+            setHundredsSuccessCount(0);
+            setPhase(nextChallenge.phase);
+            
+            // Réinitialiser les colonnes
+            const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
+            setColumns(resetCols);
+            
+            setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
+          }, FEEDBACK_DELAY * 2);
+        }
+      } else {
+        // Passer au nombre suivant dans le même défi
+        setHundredsTargetIndex(hundredsTargetIndex + 1);
+        const nextTarget = challenge.targets[hundredsTargetIndex + 1];
+        
+        // Réinitialiser les colonnes
+        const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
+        setColumns(resetCols);
+        
+        sequenceFeedback(
+          `✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`,
+          `Maintenant affiche **${nextTarget}** !`
+        );
+      }
+    } else {
+      setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
+    }
+  }, [phase, columns, totalNumber, hundredsTargetIndex, hundredsSuccessCount, sequenceFeedback]);
+
+
+  // --- LOGIQUE BOUTON VALIDER DES DÉFIS DES MILLIERS ---
+  const handleValidateThousands = useCallback(() => {
+    const challengePhases = ['challenge-thousands-1', 'challenge-thousands-2', 'challenge-thousands-3'] as const;
+    const challengeIndex = challengePhases.indexOf(phase as typeof challengePhases[number]);
+    
+    if (challengeIndex === -1) return;
+
+    const challenge = THOUSANDS_CHALLENGES[challengeIndex];
+    const targetNumber = challenge.targets[thousandsTargetIndex];
+    const currentNumber = totalNumber;
+
+    if (currentNumber === targetNumber) {
+      const newSuccessCount = thousandsSuccessCount + 1;
+      setThousandsSuccessCount(newSuccessCount);
+
+      // Si tous les nombres du défi actuel sont validés
+      if (thousandsTargetIndex + 1 >= challenge.targets.length) {
+        // Si c'est le dernier défi
+        if (challengeIndex === THOUSANDS_CHALLENGES.length - 1) {
+          setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les milliers !");
+          
+          // Marquer les milliers comme complétés
+          setCompletedChallenges(prev => ({ ...prev, thousands: true }));
+          
+          setTimeout(() => {
+            setPhase('normal');
+            sequenceFeedback(
+              "APPRENTISSAGE DES MILLIERS TERMINÉ ! Bravo ! 🎉 Tu es un expert des nombres !",
+              "🏆 Tu peux maintenant créer n'importe quel nombre jusqu'à 9999 !",
+              FEEDBACK_DELAY / 1.5
+            );
+          }, FEEDBACK_DELAY * 2);
+        } else {
+          // Passer au défi suivant
+          const nextChallenge = THOUSANDS_CHALLENGES[challengeIndex + 1];
+          setFeedback(`🎉 DÉFI ${challengeIndex + 1} RÉUSSI ! Préparé pour le prochain ?`);
+          
+          setTimeout(() => {
+            setThousandsTargetIndex(0);
+            setThousandsSuccessCount(0);
+            setPhase(nextChallenge.phase);
+            
+            // Réinitialiser les colonnes
+            const resetCols = columns.map(col => ({ ...col, unlocked: true }));
+            setColumns(resetCols);
+            
+            setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
+          }, FEEDBACK_DELAY * 2);
+        }
+      } else {
+        // Passer au nombre suivant dans le même défi
+        setThousandsTargetIndex(thousandsTargetIndex + 1);
+        const nextTarget = challenge.targets[thousandsTargetIndex + 1];
+        
+        // Réinitialiser les colonnes
+        const resetCols = columns.map(col => ({ ...col, unlocked: true }));
+        setColumns(resetCols);
+        
+        sequenceFeedback(
+          `✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`,
+          `Maintenant affiche **${nextTarget}** !`
+        );
+      }
+    } else {
+      setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
+    }
+  }, [phase, columns, totalNumber, thousandsTargetIndex, thousandsSuccessCount, sequenceFeedback]);
+
+
   // --- LOGIQUE DÉMARRAGE APPRENTISSAGE (post-tutoriel) ---
   const startLearningPhase = useCallback(() => {
     if (phase === 'done') {
@@ -853,33 +1380,59 @@ function MachineANombres() {
     const nextIdx = columns.findIndex((col, i) => !col.unlocked && i > 0);
     if (nextIdx !== -1) {
       const newCols = [...columns];
-      newCols[nextIdx].unlocked = true;
-      setColumns(newCols);
-
+      
       // Générer un message d'explication adapté au niveau
       if (nextIdx === 1 && !completedChallenges.tens) {
         setFeedback("⚠️ Tu dois d'abord compléter le défi des dizaines !");
         return;
       } else if (nextIdx === 2) {
-        // Pas besoin de vérifier tens car déjà débloqué automatiquement après learn-carry
-        setCompletedChallenges(prev => ({ ...prev, hundreds: true }));
-        sequenceFeedback(
-          "NIVEAU DÉBLOQUÉ : Les CENTAINES ! 💯",
-          `Les CENTAINES : 100, 200, 300... Crée des grands nombres jusqu'à 999 ! 🚀`
-        );
+        // Débloquer et lancer l'apprentissage des centaines
+        if (!completedChallenges.tens) {
+          setFeedback("⚠️ Tu dois d'abord maîtriser les dizaines !");
+          return;
+        }
+        
+        newCols[nextIdx].unlocked = true;
+        setColumns(newCols);
+        
+        // Lancer la phase d'apprentissage des centaines
+        setTimeout(() => {
+          const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
+          setColumns(resetCols);
+          setPhase('learn-hundreds');
+          setPendingAutoCount(true);
+          setIsCountingAutomatically(false);
+          
+          sequenceFeedback(
+            "NIVEAU DÉBLOQUÉ : Les CENTAINES ! 💯",
+            "Regarde ! 👀 La machine va compter par centaines : 100, 200, 300... !"
+          );
+        }, FEEDBACK_DELAY);
       } else if (nextIdx === 3) {
         if (!completedChallenges.hundreds) {
           setFeedback("⚠️ Tu dois d'abord maîtriser les centaines !");
-          newCols[nextIdx].unlocked = false;
-          setColumns(newCols);
           return;
         }
-        setCompletedChallenges(prev => ({ ...prev, thousands: true }));
-        sequenceFeedback(
-          "NIVEAU MAXIMUM : Les MILLIERS ! 🎉",
-          `Les MILLIERS : 1000, 2000, 3000... Crée des nombres géants jusqu'à 9999 !`
-        );
+        
+        newCols[nextIdx].unlocked = true;
+        setColumns(newCols);
+        
+        // Lancer la phase d'apprentissage des milliers
+        setTimeout(() => {
+          const resetCols = columns.map(col => ({ ...col, unlocked: true }));
+          setColumns(resetCols);
+          setPhase('learn-thousands');
+          setPendingAutoCount(true);
+          setIsCountingAutomatically(false);
+          
+          sequenceFeedback(
+            "NIVEAU MAXIMUM : Les MILLIERS ! 🎉",
+            "Regarde ! 👀 La machine va compter par milliers : 1000, 2000, 3000... !"
+          );
+        }, FEEDBACK_DELAY);
       } else {
+        newCols[nextIdx].unlocked = true;
+        setColumns(newCols);
         setFeedback(`🔓 Colonne ${newCols[nextIdx].name} débloquée ! Clique sur △ et ∇ pour t'amuser !`);
       }
     }
@@ -923,12 +1476,36 @@ function MachineANombres() {
         const targetNumber = challenge.targets[tensTargetIndex];
         return `DÉFI ${challengeIndex + 1} : Affiche **${targetNumber}** puis clique sur VALIDER ! (${tensSuccessCount}/${challenge.targets.length})`;
       }
+      case 'learn-hundreds':
+        return "Regarde ! 👀 La machine compte par centaines : 100, 200, 300...";
+      case 'learn-hundreds-combination':
+        return "🎯 Observe comment on combine centaines, dizaines et unités !";
+      case 'challenge-hundreds-1':
+      case 'challenge-hundreds-2':
+      case 'challenge-hundreds-3': {
+        const challengeIndex = ['challenge-hundreds-1', 'challenge-hundreds-2', 'challenge-hundreds-3'].indexOf(phase);
+        const challenge = HUNDREDS_CHALLENGES[challengeIndex];
+        const targetNumber = challenge.targets[hundredsTargetIndex];
+        return `DÉFI ${challengeIndex + 1} : Affiche **${targetNumber}** puis clique sur VALIDER ! (${hundredsSuccessCount}/${challenge.targets.length})`;
+      }
+      case 'learn-thousands':
+        return "Regarde ! 👀 La machine compte par milliers : 1000, 2000, 3000...";
+      case 'learn-thousands-combination':
+        return "🎯 Observe comment on combine tous les chiffres pour former des grands nombres !";
+      case 'challenge-thousands-1':
+      case 'challenge-thousands-2':
+      case 'challenge-thousands-3': {
+        const challengeIndex = ['challenge-thousands-1', 'challenge-thousands-2', 'challenge-thousands-3'].indexOf(phase);
+        const challenge = THOUSANDS_CHALLENGES[challengeIndex];
+        const targetNumber = challenge.targets[thousandsTargetIndex];
+        return `DÉFI ${challengeIndex + 1} : Affiche **${targetNumber}** puis clique sur VALIDER ! (${thousandsSuccessCount}/${challenge.targets.length})`;
+      }
       case 'normal':
         return "Mode exploration ! 🚀 Construis des grands nombres !";
       default:
         return "Prépare-toi pour l'aventure des nombres !";
     }
-  }, [phase, unitTargetIndex, unitSuccessCount, tensTargetIndex, tensSuccessCount]);
+  }, [phase, unitTargetIndex, unitSuccessCount, tensTargetIndex, tensSuccessCount, hundredsTargetIndex, hundredsSuccessCount, thousandsTargetIndex, thousandsSuccessCount]);
 
   // Typing queue to ensure messages are typed one after another
   const queueRef = useRef<Array<{ kind: 'instruction' | 'feedback'; text: string }>>([]);
@@ -1000,10 +1577,12 @@ function MachineANombres() {
 
   // --- Démarrage du compteur auto après le texte d'observation ---
   useEffect(() => {
-    // On veut démarrer le comptage auto uniquement après la phase 'learn-units', 'learn-tens' ou 'learn-tens-combination',
+    // On veut démarrer le comptage auto uniquement après les phases d'apprentissage,
     // lorsque toutes les animations de texte sont terminées
     if (
-      (phase === 'learn-units' || phase === 'learn-tens' || phase === 'learn-tens-combination') &&
+      (phase === 'learn-units' || phase === 'learn-tens' || phase === 'learn-tens-combination' || 
+       phase === 'learn-hundreds' || phase === 'learn-hundreds-combination' ||
+       phase === 'learn-thousands' || phase === 'learn-thousands-combination') &&
       pendingAutoCount &&
       !isCountingAutomatically &&
       !isTypingInstruction &&
@@ -1019,6 +1598,8 @@ function MachineANombres() {
   const showStartLearningButton = phase === 'done';
   const showValidateLearningButton = phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3';
   const showValidateTensButton = phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3';
+  const showValidateHundredsButton = phase === 'challenge-hundreds-1' || phase === 'challenge-hundreds-2' || phase === 'challenge-hundreds-3';
+  const showValidateThousandsButton = phase === 'challenge-thousands-1' || phase === 'challenge-thousands-2' || phase === 'challenge-thousands-3';
 
   // --- Rendu des jetons visuels ---
   const renderTokens = useCallback((value: number) => (
@@ -1093,8 +1674,16 @@ function MachineANombres() {
               else if (phase === 'learn-carry' && isUnit) {
                 isInteractive = true;
               }
-              else if ((phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3') && (isUnit || originalIdx === 1)) {
+              else if ((phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3' || phase === 'learn-tens-combination') && (isUnit || originalIdx === 1)) {
                 // Pendant les défis des dizaines, activer à la fois les unités et les dizaines
+                isInteractive = true;
+              }
+              else if ((phase === 'challenge-hundreds-1' || phase === 'challenge-hundreds-2' || phase === 'challenge-hundreds-3' || phase === 'learn-hundreds-combination') && (isUnit || originalIdx === 1 || originalIdx === 2)) {
+                // Pendant les défis des centaines, activer unités, dizaines et centaines
+                isInteractive = true;
+              }
+              else if ((phase === 'challenge-thousands-1' || phase === 'challenge-thousands-2' || phase === 'challenge-thousands-3' || phase === 'learn-thousands-combination') && (isUnit || originalIdx === 1 || originalIdx === 2 || originalIdx === 3)) {
+                // Pendant les défis des milliers, activer toutes les colonnes
                 isInteractive = true;
               }
             }
@@ -1262,6 +1851,88 @@ function MachineANombres() {
           );
         })()}
 
+        {/* BOUTON VALIDER (Défis des centaines) */}
+        {showValidateHundredsButton && (() => {
+          const challengeIndex = ['challenge-hundreds-1', 'challenge-hundreds-2', 'challenge-hundreds-3'].indexOf(phase as string);
+          const challenge = HUNDREDS_CHALLENGES[challengeIndex];
+          const targetNumber = challenge.targets[hundredsTargetIndex];
+          const isCorrect = totalNumber === targetNumber;
+          
+          return (
+            <div style={{ marginTop: 20, textAlign: 'center' }}>
+              <button
+                onClick={handleValidateHundreds}
+                style={{
+                  fontSize: 16,
+                  padding: '10px 30px',
+                  background: isCorrect
+                    ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                    : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  boxShadow: isCorrect
+                    ? '0 4px 8px rgba(34, 197, 94, 0.3)'
+                    : '0 4px 8px rgba(249, 115, 22, 0.3)',
+                  transition: 'all 0.2s ease',
+                  animation: isCorrect ? 'celebration 0.6s ease-in-out infinite' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                {isCorrect ? '✅ VALIDER LE DÉFI' : '🎯 VALIDER LE DÉFI'}
+              </button>
+            </div>
+          );
+        })()}
+
+        {/* BOUTON VALIDER (Défis des milliers) */}
+        {showValidateThousandsButton && (() => {
+          const challengeIndex = ['challenge-thousands-1', 'challenge-thousands-2', 'challenge-thousands-3'].indexOf(phase as string);
+          const challenge = THOUSANDS_CHALLENGES[challengeIndex];
+          const targetNumber = challenge.targets[thousandsTargetIndex];
+          const isCorrect = totalNumber === targetNumber;
+          
+          return (
+            <div style={{ marginTop: 20, textAlign: 'center' }}>
+              <button
+                onClick={handleValidateThousands}
+                style={{
+                  fontSize: 16,
+                  padding: '10px 30px',
+                  background: isCorrect
+                    ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                    : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  boxShadow: isCorrect
+                    ? '0 4px 8px rgba(34, 197, 94, 0.3)'
+                    : '0 4px 8px rgba(249, 115, 22, 0.3)',
+                  transition: 'all 0.2s ease',
+                  animation: isCorrect ? 'celebration 0.6s ease-in-out infinite' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                {isCorrect ? '✅ VALIDER LE DÉFI' : '🎯 VALIDER LE DÉFI'}
+              </button>
+            </div>
+          );
+        })()}
+
         {/* Boutons de phase (Débloquer / Commencer) */}
         {(showUnlockButton || showStartLearningButton) && (
           <div style={{ marginTop: 16, textAlign: 'center' }}>
@@ -1356,16 +2027,32 @@ function MachineANombres() {
             fontWeight: 'bold',
             color: '#fff',
             background: phase === 'done' ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' :
-              (phase === 'learn-units' || phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3' || phase === 'learn-carry' || phase === 'learn-tens' || phase === 'learn-tens-combination' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3' ? 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)' :
+              (phase === 'learn-units' || phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3' || 
+               phase === 'learn-carry' || phase === 'learn-tens' || phase === 'learn-tens-combination' || 
+               phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3' ||
+               phase === 'learn-hundreds' || phase === 'learn-hundreds-combination' ||
+               phase === 'challenge-hundreds-1' || phase === 'challenge-hundreds-2' || phase === 'challenge-hundreds-3' ||
+               phase === 'learn-thousands' || phase === 'learn-thousands-combination' ||
+               phase === 'challenge-thousands-1' || phase === 'challenge-thousands-2' || phase === 'challenge-thousands-3' 
+               ? 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)' :
                 (phase === 'tutorial' ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)')),
             padding: '8px 12px',
             borderRadius: 20,
             textAlign: 'center',
             boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-            animation: (phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3') ? 'pulse 2s ease-in-out infinite' : 'none'
+            animation: (phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3' || 
+                       phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3' ||
+                       phase === 'challenge-hundreds-1' || phase === 'challenge-hundreds-2' || phase === 'challenge-hundreds-3' ||
+                       phase === 'challenge-thousands-1' || phase === 'challenge-thousands-2' || phase === 'challenge-thousands-3') ? 'pulse 2s ease-in-out infinite' : 'none'
           }}>
             {phase === 'done' ? ' Tutoriel Terminé !' :
-              (phase === 'learn-units' || phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3' || phase === 'learn-carry' || phase === 'learn-tens' || phase === 'learn-tens-combination' || phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3') ? '💡 Apprentissage en cours' :
+              (phase === 'learn-units' || phase === 'challenge-unit-1' || phase === 'challenge-unit-2' || phase === 'challenge-unit-3' || 
+               phase === 'learn-carry' || phase === 'learn-tens' || phase === 'learn-tens-combination' || 
+               phase === 'challenge-tens-1' || phase === 'challenge-tens-2' || phase === 'challenge-tens-3' ||
+               phase === 'learn-hundreds' || phase === 'learn-hundreds-combination' ||
+               phase === 'challenge-hundreds-1' || phase === 'challenge-hundreds-2' || phase === 'challenge-hundreds-3' ||
+               phase === 'learn-thousands' || phase === 'learn-thousands-combination' ||
+               phase === 'challenge-thousands-1' || phase === 'challenge-thousands-2' || phase === 'challenge-thousands-3') ? '💡 Apprentissage en cours' :
                 phase === 'tutorial' ? ' Découverte de la machine' : '📚 Exploration'}
           </div>
         )}
