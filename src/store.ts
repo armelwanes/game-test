@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type {
     MachineState,
     Column,
+    Phase,
 } from './types.ts';
 import {
     FEEDBACK_DELAY,
@@ -56,6 +57,7 @@ export const useStore = create<MachineState>((set, get) => ({
     showValidateTensButton: false,
     showValidateHundredsButton: false,
     showValidateThousandsButton: false,
+    showContinueButton: false,
 
     // Actions
     setColumns: (updater) => {
@@ -147,29 +149,23 @@ export const useStore = create<MachineState>((set, get) => ({
                 );
                 setTimeout(() => {
                     get().setFeedback("Donc en tout, nous avons bien 10 chiffres différents : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 !");
-                    setTimeout(() => {
-                        set({ showInputField: false, userInput: "", phase: 'intro-add-roll' });
-                        get().updateInstruction();
-                    }, FEEDBACK_DELAY);
+                    set({ showInputField: false, userInput: "", phase: 'intro-add-roll-ready' });
+                    get().updateButtonVisibility();
                 }, FEEDBACK_DELAY * 2);
             } else if (answer === 10) {
                 sequenceFeedback(
                     "Tu n'as pas oublié le 0 ! Bravo !",
                     "0, 1, 2, 3, 4, 5, 6, 7, 8, 9, le compte est bon, nous en avons bien 10 ! Il est un peu particulier et parfois on l'oublie, mais ce 0 est aussi important que les autres chiffres !"
                 );
-                setTimeout(() => {
-                    set({ showInputField: false, userInput: "", phase: 'intro-add-roll' });
-                    get().updateInstruction();
-                }, FEEDBACK_DELAY * 2);
+                set({ showInputField: false, userInput: "", phase: 'intro-add-roll-ready' });
+                get().updateButtonVisibility();
             } else {
                 sequenceFeedback(
                     "J'imagine que tu n'y as pas vraiment fait attention, comptons ensemble...",
                     "0, 1, 2, 3, 4, 5, 6, 7, 8, 9, le compte est bon, nous en avons 10 ! Au début la machine affichait aussi 0 et ce 0 est aussi important que les autres chiffres."
                 );
-                setTimeout(() => {
-                    set({ showInputField: false, userInput: "", phase: 'intro-add-roll' });
-                    get().updateInstruction();
-                }, FEEDBACK_DELAY * 2);
+                set({ showInputField: false, userInput: "", phase: 'intro-add-roll-ready' });
+                get().updateButtonVisibility();
             }
         } else if (phase === 'intro-question-max') {
             if (answer === 100) {
@@ -179,29 +175,23 @@ export const useStore = create<MachineState>((set, get) => ({
                 );
                 setTimeout(() => {
                     get().setFeedback("Regarde combien chaque rouleau peut afficher de points : 9 et 9, ce qui veut dire qu'on peut compter jusqu'à 99 !");
-                    setTimeout(() => {
-                        set({ showInputField: false, userInput: "", phase: 'tutorial' });
-                        get().updateInstruction();
-                    }, FEEDBACK_DELAY);
+                    set({ showInputField: false, userInput: "", phase: 'tutorial-ready' });
+                    get().updateButtonVisibility();
                 }, FEEDBACK_DELAY * 2);
             } else if (answer === 99) {
                 sequenceFeedback(
                     "Exactement ! Trop facile comme question !",
                     "Avec deux rouleaux, on peut afficher jusqu'à 99 !"
                 );
-                setTimeout(() => {
-                    set({ showInputField: false, userInput: "", phase: 'tutorial' });
-                    get().updateInstruction();
-                }, FEEDBACK_DELAY * 2);
+                set({ showInputField: false, userInput: "", phase: 'tutorial-ready' });
+                get().updateButtonVisibility();
             } else {
                 sequenceFeedback(
                     "Pas tout à fait...",
                     "Regarde combien chaque rouleau peut afficher de points : 9 et 9, ce qui veut dire qu'on peut compter jusqu'à 99 !"
                 );
-                setTimeout(() => {
-                    set({ showInputField: false, userInput: "", phase: 'tutorial' });
-                    get().updateInstruction();
-                }, FEEDBACK_DELAY * 2);
+                set({ showInputField: false, userInput: "", phase: 'tutorial-ready' });
+                get().updateButtonVisibility();
             }
         }
     },
@@ -210,6 +200,33 @@ export const useStore = create<MachineState>((set, get) => ({
         const { phase, columns } = get();
         const allColumnsUnlocked = columns.every(col => col.unlocked);
 
+        // Phases that need a Continue button instead of automatic transitions
+        const continuePhases = [
+            'intro-welcome-ready',
+            'intro-discover-ready', 
+            'intro-add-roll-ready',
+            'explore-units-ready',
+            'click-add-ready',
+            'click-remove-ready',
+            'tutorial-ready',
+            'learn-carry-ready',
+            'learn-units-ready',
+            'learn-tens-ready',
+            'learn-tens-combination-ready',
+            'learn-hundreds-ready',
+            'learn-hundreds-combination-ready',
+            'learn-thousands-ready',
+            'learn-thousands-combination-ready',
+            'challenge-unit-1-ready',
+            'challenge-unit-2-ready',
+            'challenge-tens-1-ready',
+            'challenge-tens-2-ready',
+            'challenge-hundreds-1-ready',
+            'challenge-hundreds-2-ready',
+            'challenge-thousands-1-ready',
+            'challenge-thousands-2-ready',
+        ];
+
         set({
             showUnlockButton: phase === 'normal' && !allColumnsUnlocked,
             showStartLearningButton: phase === 'done',
@@ -217,11 +234,12 @@ export const useStore = create<MachineState>((set, get) => ({
             showValidateTensButton: phase.startsWith('challenge-tens-'),
             showValidateHundredsButton: phase.startsWith('challenge-hundreds-'),
             showValidateThousandsButton: phase.startsWith('challenge-thousands-'),
+            showContinueButton: continuePhases.includes(phase),
         });
     },
 
     runAutoCount: () => {
-        const { phase, isCountingAutomatically, columns, nextPhaseAfterAuto, timer } = get();
+        const { phase, isCountingAutomatically, columns, timer } = get();
         const COUNT_SPEED = 1800; // Vitesse de l'auto-incrémentation ralentie pour le commentaire
 
         if (timer) {
@@ -263,16 +281,13 @@ export const useStore = create<MachineState>((set, get) => ({
             } else { // unitsValue is 9
                 get().setFeedback("STOP ! 🛑 Le compteur est à 9. La colonne est PLEINE ! Attends, la machine va te montrer la suite !");
                 const newTimer = setTimeout(() => {
-                    const targetPhase = nextPhaseAfterAuto ?? 'challenge-unit-1';
                     get().setColumns(initialColumns);
                     get().setIsCountingAutomatically(false);
                     get().setNextPhaseAfterAuto(null);
                     get().resetUnitChallenge();
                     get().setFeedback("Retour à zéro ! 🔄 Maintenant, c'est à toi de jouer !");
-
-                    setTimeout(() => {
-                        get().setPhase(targetPhase);
-                    }, FEEDBACK_DELAY);
+                    get().setPhase('learn-units-ready');
+                    get().updateButtonVisibility();
                 }, COUNT_SPEED * 3);
                 set({ timer: newTimer as unknown as number });
             }
@@ -313,10 +328,9 @@ export const useStore = create<MachineState>((set, get) => ({
                     get().setColumns(initialColumns);
                     get().setIsCountingAutomatically(false);
                     get().setFeedback("Retour à zéro ! 🔄 Maintenant on va apprendre à combiner les dizaines et les unités !");
-                    setTimeout(() => {
-                        get().setPhase('learn-tens-combination');
-                        get().setPendingAutoCount(true);
-                    }, FEEDBACK_DELAY);
+                    get().setPhase('learn-tens-ready');
+                    get().setPendingAutoCount(false);
+                    get().updateButtonVisibility();
                 }, COUNT_SPEED * 3);
                 set({ timer: newTimer as unknown as number });
             }
@@ -369,9 +383,8 @@ export const useStore = create<MachineState>((set, get) => ({
                     get().setIsCountingAutomatically(false);
                     get().resetTensChallenge();
                     get().setFeedback("Retour à zéro ! 🔄 À toi de jouer maintenant !");
-                    setTimeout(() => {
-                        get().setPhase('challenge-tens-1');
-                    }, FEEDBACK_DELAY);
+                    get().setPhase('learn-tens-combination-ready');
+                    get().updateButtonVisibility();
                 }, COUNT_SPEED * 3);
                 set({ timer: newTimer as unknown as number });
             }
@@ -410,10 +423,9 @@ export const useStore = create<MachineState>((set, get) => ({
                     get().setColumns(initialColumns);
                     get().setIsCountingAutomatically(false);
                     get().setFeedback("Retour à zéro ! 🔄 Maintenant on va apprendre à combiner les centaines, dizaines et unités !");
-                    setTimeout(() => {
-                        get().setPhase('learn-hundreds-combination');
-                        get().setPendingAutoCount(true);
-                    }, FEEDBACK_DELAY);
+                    get().setPhase('learn-hundreds-ready');
+                    get().setPendingAutoCount(false);
+                    get().updateButtonVisibility();
                 }, COUNT_SPEED * 3);
                 set({ timer: newTimer as unknown as number });
             }
@@ -468,9 +480,8 @@ export const useStore = create<MachineState>((set, get) => ({
                     get().setIsCountingAutomatically(false);
                     get().resetHundredsChallenge();
                     get().setFeedback("Retour à zéro ! 🔄 À toi de jouer maintenant !");
-                    setTimeout(() => {
-                        get().setPhase('challenge-hundreds-1');
-                    }, FEEDBACK_DELAY);
+                    get().setPhase('learn-hundreds-combination-ready');
+                    get().updateButtonVisibility();
                 }, COUNT_SPEED * 3);
                 set({ timer: newTimer as unknown as number });
             }
@@ -505,10 +516,9 @@ export const useStore = create<MachineState>((set, get) => ({
                     get().setColumns(initialColumns);
                     get().setIsCountingAutomatically(false);
                     get().setFeedback("Retour à zéro ! 🔄 Apprenons à combiner tous les chiffres !");
-                    setTimeout(() => {
-                        get().setPhase('learn-thousands-combination');
-                        get().setPendingAutoCount(true);
-                    }, FEEDBACK_DELAY);
+                    get().setPhase('learn-thousands-ready');
+                    get().setPendingAutoCount(false);
+                    get().updateButtonVisibility();
                 }, COUNT_SPEED * 3);
                 set({ timer: newTimer as unknown as number });
             }
@@ -563,9 +573,8 @@ export const useStore = create<MachineState>((set, get) => ({
                     get().setIsCountingAutomatically(false);
                     get().resetThousandsChallenge();
                     get().setFeedback("Retour à zéro ! 🔄 À toi de jouer maintenant !");
-                    setTimeout(() => {
-                        get().setPhase('challenge-thousands-1');
-                    }, FEEDBACK_DELAY);
+                    get().setPhase('learn-thousands-combination-ready');
+                    get().updateButtonVisibility();
                 }, COUNT_SPEED * 3);
                 set({ timer: newTimer as unknown as number });
             }
@@ -598,10 +607,8 @@ export const useStore = create<MachineState>((set, get) => ({
                     "Tu es prêt à la découvrir ?",
                     "Tadaaaaa ! Comment tu la trouves ?"
                 );
-                setTimeout(() => {
-                    set({ phase: 'intro-discover' });
-                    get().updateInstruction();
-                }, FEEDBACK_DELAY * 2);
+                set({ phase: 'intro-welcome-ready' });
+                get().updateButtonVisibility();
             }, FEEDBACK_DELAY * 2);
             return;
         } else if (phase === 'intro-discover') {
@@ -614,12 +621,8 @@ export const useStore = create<MachineState>((set, get) => ({
                     "Et hop, je vais la mettre en route pour que tu puisses appuyer sur ses boutons.",
                     "Vas-y clique sur les boutons + et – pour voir ce qu'il se passe."
                 );
-                setTimeout(() => {
-                    const newCols = [...columns];
-                    newCols[0].value = 0;
-                    set({ columns: newCols });
-                    get().setFeedback("Essaie d'afficher le chiffre le plus grand possible en cliquant sur △ !");
-                }, FEEDBACK_DELAY * 2);
+                set({ phase: 'intro-discover-ready' });
+                get().updateButtonVisibility();
             }, FEEDBACK_DELAY * 2);
             return;
         }
@@ -669,10 +672,8 @@ export const useStore = create<MachineState>((set, get) => ({
                     "Et voilà, on a rempli la machine !",
                     "Tu as vu comme les lumières s'allument en même temps que les chiffres changent ?"
                 );
-                setTimeout(() => {
-                    set({ showInputField: true, phase: 'intro-question-digits' });
-                    get().updateInstruction();
-                }, FEEDBACK_DELAY * 2);
+                set({ showInputField: true, phase: 'intro-question-digits' });
+                get().updateInstruction();
             } else if (unitsValue > 0) {
                 get().setFeedback(`${unitsValue}... Continue à cliquer sur △ !`);
             }
@@ -693,10 +694,8 @@ export const useStore = create<MachineState>((set, get) => ({
                         "Et voilà le travail ! Tu as vu comment les lumières ont voyagé ?",
                         "Elles se regroupent pour n'allumer qu'une autre lumière du rouleau suivant. C'est un peu comme si chaque lumière du nouveau rouleau avait dix petites lumières à l'intérieur."
                     );
-                    setTimeout(() => {
-                        set({ showInputField: true, phase: 'intro-question-max' });
-                        get().updateInstruction();
-                    }, FEEDBACK_DELAY * 2);
+                    set({ showInputField: true, phase: 'intro-question-max' });
+                    get().updateInstruction();
                 }, FEEDBACK_DELAY * 2);
             } else if (unitsValue > 0) {
                 get().setFeedback(`${unitsValue}... Continue à cliquer sur △ jusqu'à 9 !`);
@@ -718,10 +717,8 @@ export const useStore = create<MachineState>((set, get) => ({
             else if (unitsValue === 2) sequenceFeedback("Fantastique ! 🎉 **Dis : DEUX !** Lève DEUX doigts ! ✌️", `DEUX, c'est une paire ! Clique sur △ !`);
             else if (unitsValue === 3) {
                 sequenceFeedback("Merveilleux ! 🎉 **Dis : TROIS !** Trois doigts !", `Clique sur △ pour continuer !`);
-                setTimeout(() => {
-                    set({ phase: 'click-add', feedback: "Bravo ! Continuons jusqu'à 9 ! Clique sur △ !" });
-                    get().updateButtonVisibility();
-                }, FEEDBACK_DELAY * 1.5);
+                set({ phase: 'explore-units-ready', feedback: "Bravo ! Continuons jusqu'à 9 ! Clique sur △ !" });
+                get().updateButtonVisibility();
             } else if (unitsValue > 3) {
                 newCols[0].value = 3;
                 set({ columns: newCols });
@@ -734,28 +731,22 @@ export const useStore = create<MachineState>((set, get) => ({
                 newCols[idx].value = 9;
                 set({ columns: newCols });
                 get().setFeedback("Parfait ! 🎉 Tu as atteint 9 ! Maintenant clique sur ∇ pour descendre à zéro !");
-                setTimeout(() => {
-                    set({ phase: 'click-remove' });
-                    get().updateButtonVisibility();
-                    get().setFeedback("Super ! Clique sur ∇ pour enlever les billes jusqu'à zéro !");
-                }, FEEDBACK_DELAY);
+                set({ phase: 'click-add-ready' });
+                get().updateButtonVisibility();
                 return;
             }
             if (nextValue === 9) {
                 set({ isTransitioningToChallenge: true, addClicks: addClicks + 1 });
                 sequenceFeedback("Magnifique ! 🎉 Tu as atteint 9 !", "Tu es prêt pour l'évaluation !");
-                setTimeout(() => {
-                    const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
-                    resetUnitChallenge();
-                    set({
-                        columns: resetCols,
-                        addClicks: 0,
-                        phase: 'challenge-unit-1',
-                        isTransitioningToChallenge: false
-                    });
-                    get().updateButtonVisibility();
-                    get().setFeedback(`🎯 DÉFI 1 : Affiche le nombre **${UNIT_CHALLENGES[0].targets[0]}** avec les boutons, puis clique sur VALIDER !`);
-                }, FEEDBACK_DELAY * 2);
+                const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+                resetUnitChallenge();
+                set({
+                    columns: resetCols,
+                    addClicks: 0,
+                    phase: 'click-add-ready',
+                    isTransitioningToChallenge: false
+                });
+                get().updateButtonVisibility();
                 return;
             }
             set({ addClicks: addClicks + 1 });
@@ -772,17 +763,14 @@ export const useStore = create<MachineState>((set, get) => ({
             }
         } else if (phase === 'learn-carry' && hasCarry) {
             sequenceFeedback("INCROYABLE ! 🎆 C'est de la MAGIE ! 10 billes sont devenues 1 bille dans la colonne suivante !", "C'est la RÈGLE D'OR : 10 billes = 1 bille dans la colonne de gauche !");
-            setTimeout(() => {
-                const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
-                set({
-                    columns: resetCols,
-                    phase: 'learn-tens',
-                    pendingAutoCount: true,
-                    isCountingAutomatically: false
-                });
-                get().updateButtonVisibility();
-                sequenceFeedback("Bravo ! 🎉 Maintenant on va apprendre les DIZAINES !", "Observe comment la machine compte par dizaines : 10, 20, 30... !");
-            }, FEEDBACK_DELAY * 2);
+            const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+            set({
+                columns: resetCols,
+                phase: 'learn-carry-ready',
+                pendingAutoCount: false,
+                isCountingAutomatically: false
+            });
+            get().updateButtonVisibility();
         } else if (phase === 'normal' && hasCarry) {
             get().setFeedback("Échange magique ! 10 billes → 1 bille dans la colonne de gauche ! 🎩");
         } else if (phase === 'normal' || phase === 'done' || phase === 'learn-units') {
@@ -851,16 +839,13 @@ export const useStore = create<MachineState>((set, get) => ({
             else if (unitsValue === 1) sequenceFeedback("Bravo ! Clique encore sur ROUGE pour tout enlever !", "Plus qu'une bille ! Un dernier clic !");
             else if (unitsValue === 0 && tempTotalBefore === 1) {
                 sequenceFeedback("Extraordinaire ! 🎉 Tu maîtrises les deux boutons ! Je vais t'apprendre les **NOMBRES** !", "Prépare-toi pour une grande aventure !");
-                setTimeout(() => {
-                    set({
-                        columns: initialColumns.map(col => ({ ...col })),
-                        nextPhaseAfterAuto: 'explore-units',
-                        phase: 'learn-units',
-                        pendingAutoCount: true
-                    });
-                    get().updateButtonVisibility();
-                    sequenceFeedback("Bienvenue dans le monde des NOMBRES ! ✨ Un nombre dit COMBIEN il y a de choses.", "Regarde ! 👀 La machine compte de 1 à 9. Compte avec tes doigts !");
-                }, FEEDBACK_DELAY * 2);
+                set({
+                    columns: initialColumns.map(col => ({ ...col })),
+                    nextPhaseAfterAuto: 'explore-units',
+                    phase: 'tutorial-ready',
+                    pendingAutoCount: false
+                });
+                get().updateButtonVisibility();
             } else if (unitsValue > 0) {
                 sequenceFeedback(`Bien joué ! Continue à cliquer sur ROUGE !`, "Le bouton ROUGE retire une bille à chaque fois !");
             }
@@ -874,16 +859,13 @@ export const useStore = create<MachineState>((set, get) => ({
             else if (unitsValue === 1) sequenceFeedback(`**${unitsValue}** (UN) ! 👆`, `Presque à ZÉRO ! Un dernier clic !`);
             else if (unitsValue === 0 && tempTotalBefore === 1) {
                 sequenceFeedback("**ZÉRO** (0) ! 🎉 Plus rien ! On est revenu au début !", "Fantastique ! Tu maîtrises les nombres de 0 à 9 !");
-                setTimeout(() => {
-                    const newCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
-                    resetUnitChallenge();
-                    set({
-                        columns: newCols,
-                        phase: 'challenge-unit-1'
-                    });
-                    get().updateButtonVisibility();
-                    get().setFeedback(`Bravo ! 🎉 Maintenant, DÉFI 1 : Affiche le nombre **${UNIT_CHALLENGES[0].targets[0]}** avec les boutons, puis clique sur VALIDER !`);
-                }, FEEDBACK_DELAY);
+                const newCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+                resetUnitChallenge();
+                set({
+                    columns: newCols,
+                    phase: 'click-remove-ready'
+                });
+                get().updateButtonVisibility();
             } else if (unitsValue > 0) {
                 sequenceFeedback(`**${unitsValue}** ! Baisse un doigt !`, `${unitsValue} doigts levés. Continue avec ∇ !`);
             }
@@ -893,7 +875,7 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateLearning: () => {
-        const { phase, columns, unitTargetIndex, unitSuccessCount, sequenceFeedback, resetUnitChallenge } = get();
+        const { phase, columns, unitTargetIndex, unitSuccessCount, resetUnitChallenge } = get();
         const challengePhases = ['challenge-unit-1', 'challenge-unit-2', 'challenge-unit-3'] as const;
         const challengeIndex = challengePhases.indexOf(phase as typeof challengePhases[number]);
         if (challengeIndex === -1) return;
@@ -909,34 +891,23 @@ export const useStore = create<MachineState>((set, get) => ({
             if (unitTargetIndex + 1 >= challenge.targets.length) {
                 if (challengeIndex === UNIT_CHALLENGES.length - 1) {
                     get().setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les unités !");
-                    setTimeout(() => {
-                        set({ phase: 'learn-carry' });
-                        get().updateButtonVisibility();
-                        sequenceFeedback("Prêt pour la magie ? 🎩 Clique sur △ pour l'échange 10 pour 1 !", "Vas-y ! Clique sur △ pour voir la transformation !");
-                    }, FEEDBACK_DELAY);
+                    get().setPhase('challenge-unit-3-ready');
                 } else {
                     get().setFeedback(`✅ DÉFI ${challengeIndex + 1} TERMINÉ ! Bravo !`);
-                    setTimeout(() => {
-                        const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
-                        resetUnitChallenge();
-                        const nextPhase = challengePhases[challengeIndex + 1];
-                        set({
-                            columns: resetCols,
-                            phase: nextPhase
-                        });
-                        get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${UNIT_CHALLENGES[challengeIndex + 1].targets[0]}** puis clique sur VALIDER !`);
-                    }, FEEDBACK_DELAY);
+                    const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+                    resetUnitChallenge();
+                    const readyPhase: Phase = challengeIndex === 0 ? 'challenge-unit-1-ready' : 'challenge-unit-2-ready';
+                    set({ columns: resetCols });
+                    get().setPhase(readyPhase);
                 }
             } else {
                 get().setFeedback("✅ Correct ! Bravo !");
-                setTimeout(() => {
-                    const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
-                    set({
-                        columns: resetCols,
-                        unitTargetIndex: unitTargetIndex + 1
-                    });
-                    get().setFeedback(`🎯 DÉFI ${challengeIndex + 1} : Affiche le nombre **${challenge.targets[unitTargetIndex + 1]}** puis clique sur VALIDER ! (${newSuccessCount}/${challenge.targets.length})`);
-                }, FEEDBACK_DELAY);
+                const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+                set({
+                    columns: resetCols,
+                    unitTargetIndex: unitTargetIndex + 1
+                });
+                get().setFeedback(`🎯 DÉFI ${challengeIndex + 1} : Affiche le nombre **${challenge.targets[unitTargetIndex + 1]}** puis clique sur VALIDER ! (${newSuccessCount}/${challenge.targets.length})`);
             }
         } else {
             get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Utilise △ et ∇ !`);
@@ -961,35 +932,25 @@ export const useStore = create<MachineState>((set, get) => ({
                 if (challengeIndex === TENS_CHALLENGES.length - 1) {
                     get().setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les dizaines !");
                     set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, tens: true } }));
-                    setTimeout(() => {
-                        const newCols = [...get().columns];
-                        if (!newCols[2].unlocked) {
-                            newCols[2].unlocked = true;
-                            set({ columns: newCols });
-                        }
-                        const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
-                        set({
-                            columns: resetCols,
-                            phase: 'learn-hundreds',
-                            pendingAutoCount: true,
-                            isCountingAutomatically: false
-                        });
-                        get().updateButtonVisibility();
-                        sequenceFeedback("APPRENTISSAGE DES DIZAINES TERMINÉ ! Bravo ! 🎉", "NIVEAU DÉBLOQUÉ : Les CENTAINES ! 💯 La machine va compter par centaines : 100, 200, 300... !");
-                    }, FEEDBACK_DELAY * 2);
+                    const newCols = [...get().columns];
+                    if (!newCols[2].unlocked) {
+                        newCols[2].unlocked = true;
+                        set({ columns: newCols });
+                    }
+                    const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
+                    set({
+                        columns: resetCols,
+                        pendingAutoCount: false,
+                        isCountingAutomatically: false
+                    });
+                    get().setPhase('challenge-tens-3-ready');
                 } else {
-                    const nextChallenge = TENS_CHALLENGES[challengeIndex + 1];
                     get().setFeedback(`🎉 DÉFI ${challengeIndex + 1} RÉUSSIE ! Préparé pour le prochain ?`);
-                    setTimeout(() => {
-                        resetTensChallenge();
-                        const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
-                        set({
-                            phase: nextChallenge.phase,
-                            columns: resetCols
-                        });
-                        get().updateButtonVisibility();
-                        get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
-                    }, FEEDBACK_DELAY * 2);
+                    resetTensChallenge();
+                    const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+                    const readyPhase: Phase = challengeIndex === 0 ? 'challenge-tens-1-ready' : 'challenge-tens-2-ready';
+                    set({ columns: resetCols });
+                    get().setPhase(readyPhase);
                 }
             } else {
                 const nextTarget = challenge.targets[tensTargetIndex + 1];
@@ -1020,35 +981,25 @@ export const useStore = create<MachineState>((set, get) => ({
                 if (challengeIndex === HUNDREDS_CHALLENGES.length - 1) {
                     get().setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les centaines !");
                     set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, hundreds: true } }));
-                    setTimeout(() => {
-                        const newCols = [...get().columns];
-                        if (!newCols[3].unlocked) {
-                            newCols[3].unlocked = true;
-                            set({ columns: newCols });
-                        }
-                        const resetCols = columns.map((col: Column) => ({ ...col, unlocked: true }));
-                        set({
-                            columns: resetCols,
-                            phase: 'learn-thousands',
-                            pendingAutoCount: true,
-                            isCountingAutomatically: false
-                        });
-                        get().updateButtonVisibility();
-                        sequenceFeedback("APPRENTISSAGE DES CENTAINES TERMINÉ ! Bravo ! 🎉", "NIVEAU MAXIMUM : Les MILLIERS ! 🎉 La machine va compter par milliers : 1000, 2000, 3000... !");
-                    }, FEEDBACK_DELAY * 2);
+                    const newCols = [...get().columns];
+                    if (!newCols[3].unlocked) {
+                        newCols[3].unlocked = true;
+                        set({ columns: newCols });
+                    }
+                    const resetCols = columns.map((col: Column) => ({ ...col, unlocked: true }));
+                    set({
+                        columns: resetCols,
+                        pendingAutoCount: false,
+                        isCountingAutomatically: false
+                    });
+                    get().setPhase('challenge-hundreds-3-ready');
                 } else {
-                    const nextChallenge = HUNDREDS_CHALLENGES[challengeIndex + 1];
                     get().setFeedback(`🎉 DÉFI ${challengeIndex + 1} RÉUSSIE ! Préparé pour le prochain ?`);
-                    setTimeout(() => {
-                        resetHundredsChallenge();
-                        const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
-                        set({
-                            phase: nextChallenge.phase,
-                            columns: resetCols
-                        });
-                        get().updateButtonVisibility();
-                        get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
-                    }, FEEDBACK_DELAY * 2);
+                    resetHundredsChallenge();
+                    const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
+                    const readyPhase: Phase = challengeIndex === 0 ? 'challenge-hundreds-1-ready' : 'challenge-hundreds-2-ready';
+                    set({ columns: resetCols });
+                    get().setPhase(readyPhase);
                 }
             } else {
                 const nextTarget = challenge.targets[hundredsTargetIndex + 1];
@@ -1079,24 +1030,14 @@ export const useStore = create<MachineState>((set, get) => ({
                 if (challengeIndex === THOUSANDS_CHALLENGES.length - 1) {
                     get().setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les milliers !");
                     set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, thousands: true } }));
-                    setTimeout(() => {
-                        set({ phase: 'normal' });
-                        get().updateButtonVisibility();
-                        sequenceFeedback("APPRENTISSAGE DES MILLIERS TERMINÉ ! Bravo ! 🎉 Tu es un expert des nombres !", "🏆 Tu peux maintenant créer n'importe quel nombre jusqu'à 9999 !", FEEDBACK_DELAY / 1.5);
-                    }, FEEDBACK_DELAY * 2);
+                    get().setPhase('challenge-thousands-3-ready');
                 } else {
-                    const nextChallenge = THOUSANDS_CHALLENGES[challengeIndex + 1];
                     get().setFeedback(`🎉 DÉFI ${challengeIndex + 1} RÉUSSIE ! Préparé pour le prochain ?`);
-                    setTimeout(() => {
-                        resetThousandsChallenge();
-                        const resetCols = get().columns.map((col: Column) => ({ ...col, unlocked: true }));
-                        set({
-                            phase: nextChallenge.phase,
-                            columns: resetCols
-                        });
-                        get().updateButtonVisibility();
-                        get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
-                    }, FEEDBACK_DELAY * 2);
+                    resetThousandsChallenge();
+                    const resetCols = get().columns.map((col: Column) => ({ ...col, unlocked: true }));
+                    const readyPhase: Phase = challengeIndex === 0 ? 'challenge-thousands-1-ready' : 'challenge-thousands-2-ready';
+                    set({ columns: resetCols });
+                    get().setPhase(readyPhase);
                 }
             } else {
                 const nextTarget = challenge.targets[thousandsTargetIndex + 1];
@@ -1106,6 +1047,138 @@ export const useStore = create<MachineState>((set, get) => ({
             }
         } else {
             get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
+        }
+    },
+
+    handleContinue: () => {
+        const { phase, sequenceFeedback } = get();
+        
+        if (phase === 'intro-welcome-ready') {
+            set({ phase: 'intro-discover' });
+            get().updateInstruction();
+        } else if (phase === 'intro-discover-ready') {
+            const newCols = [...get().columns];
+            newCols[0].value = 0;
+            set({ columns: newCols, phase: 'intro-add-roll' });
+            get().updateInstruction();
+            get().setFeedback("Essaie d'afficher le chiffre le plus grand possible en cliquant sur △ !");
+        } else if (phase === 'intro-add-roll-ready') {
+            set({ phase: 'intro-add-roll' });
+            get().updateInstruction();
+        } else if (phase === 'tutorial-ready') {
+            set({
+                columns: initialColumns.map(col => ({ ...col })),
+                nextPhaseAfterAuto: 'explore-units',
+                phase: 'learn-units',
+                pendingAutoCount: true
+            });
+            get().updateButtonVisibility();
+            sequenceFeedback("Bienvenue dans le monde des NOMBRES ! ✨ Un nombre dit COMBIEN il y a de choses.", "Regarde ! 👀 La machine compte de 1 à 9. Compte avec tes doigts !");
+        } else if (phase === 'explore-units-ready') {
+            set({ phase: 'click-add', feedback: "Bravo ! Continuons jusqu'à 9 ! Clique sur △ !" });
+            get().updateButtonVisibility();
+        } else if (phase === 'click-add-ready') {
+            set({ phase: 'click-remove' });
+            get().updateButtonVisibility();
+            get().setFeedback("Super ! Clique sur ∇ pour enlever les billes jusqu'à zéro !");
+        } else if (phase === 'click-remove-ready') {
+            set({ phase: 'challenge-unit-1' });
+            get().updateButtonVisibility();
+            get().setFeedback(`Bravo ! 🎉 Maintenant, DÉFI 1 : Affiche le nombre **${UNIT_CHALLENGES[0].targets[0]}** avec les boutons, puis clique sur VALIDER !`);
+        } else if (phase === 'challenge-unit-1-ready') {
+            const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+            get().resetUnitChallenge();
+            set({ columns: resetCols, phase: 'challenge-unit-2' });
+            get().setFeedback(`🎯 DÉFI 2 : Affiche le nombre **${UNIT_CHALLENGES[1].targets[0]}** puis clique sur VALIDER !`);
+        } else if (phase === 'challenge-unit-2-ready') {
+            const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+            get().resetUnitChallenge();
+            set({ columns: resetCols, phase: 'challenge-unit-3' });
+            get().setFeedback(`🎯 DÉFI 3 : Affiche le nombre **${UNIT_CHALLENGES[2].targets[0]}** puis clique sur VALIDER !`);
+        } else if (phase === 'challenge-unit-3-ready') {
+            set({ phase: 'learn-carry' });
+            get().updateButtonVisibility();
+            sequenceFeedback("Prêt pour la magie ? 🎩 Clique sur △ pour l'échange 10 pour 1 !", "Vas-y ! Clique sur △ pour voir la transformation !");
+        } else if (phase === 'learn-carry-ready') {
+            set({
+                phase: 'learn-tens',
+                pendingAutoCount: true,
+                isCountingAutomatically: false
+            });
+            get().updateButtonVisibility();
+            sequenceFeedback("Bravo ! 🎉 Maintenant on va apprendre les DIZAINES !", "Observe comment la machine compte par dizaines : 10, 20, 30... !");
+        } else if (phase === 'learn-units-ready') {
+            const targetPhase = get().nextPhaseAfterAuto ?? 'challenge-unit-1';
+            get().setPhase(targetPhase);
+        } else if (phase === 'learn-tens-ready') {
+            get().setPhase('learn-tens-combination');
+            get().setPendingAutoCount(true);
+        } else if (phase === 'learn-tens-combination-ready') {
+            get().setPhase('challenge-tens-1');
+        } else if (phase === 'challenge-tens-1-ready') {
+            const nextChallenge = TENS_CHALLENGES[1];
+            set({ phase: nextChallenge.phase });
+            get().updateButtonVisibility();
+            get().setFeedback(`🎯 DÉFI 2 : Affiche le nombre **${nextChallenge.targets[0]}** !`);
+        } else if (phase === 'challenge-tens-2-ready') {
+            const nextChallenge = TENS_CHALLENGES[2];
+            set({ phase: nextChallenge.phase });
+            get().updateButtonVisibility();
+            get().setFeedback(`🎯 DÉFI 3 : Affiche le nombre **${nextChallenge.targets[0]}** !`);
+        } else if (phase === 'challenge-tens-3-ready') {
+            const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
+            set({
+                columns: resetCols,
+                phase: 'learn-hundreds',
+                pendingAutoCount: true,
+                isCountingAutomatically: false
+            });
+            get().updateButtonVisibility();
+            sequenceFeedback("APPRENTISSAGE DES DIZAINES TERMINÉ ! Bravo ! 🎉", "NIVEAU DÉBLOQUÉ : Les CENTAINES ! 💯 La machine va compter par centaines : 100, 200, 300... !");
+        } else if (phase === 'learn-hundreds-ready') {
+            get().setPhase('learn-hundreds-combination');
+            get().setPendingAutoCount(true);
+        } else if (phase === 'learn-hundreds-combination-ready') {
+            get().setPhase('challenge-hundreds-1');
+        } else if (phase === 'challenge-hundreds-1-ready') {
+            const nextChallenge = HUNDREDS_CHALLENGES[1];
+            set({ phase: nextChallenge.phase });
+            get().updateButtonVisibility();
+            get().setFeedback(`🎯 DÉFI 2 : Affiche le nombre **${nextChallenge.targets[0]}** !`);
+        } else if (phase === 'challenge-hundreds-2-ready') {
+            const nextChallenge = HUNDREDS_CHALLENGES[2];
+            set({ phase: nextChallenge.phase });
+            get().updateButtonVisibility();
+            get().setFeedback(`🎯 DÉFI 3 : Affiche le nombre **${nextChallenge.targets[0]}** !`);
+        } else if (phase === 'challenge-hundreds-3-ready') {
+            const resetCols = get().columns.map((col: Column) => ({ ...col, unlocked: true }));
+            set({
+                columns: resetCols,
+                phase: 'learn-thousands',
+                pendingAutoCount: true,
+                isCountingAutomatically: false
+            });
+            get().updateButtonVisibility();
+            sequenceFeedback("APPRENTISSAGE DES CENTAINES TERMINÉ ! Bravo ! 🎉", "NIVEAU MAXIMUM : Les MILLIERS ! 🎉 La machine va compter par milliers : 1000, 2000, 3000... !");
+        } else if (phase === 'learn-thousands-ready') {
+            get().setPhase('learn-thousands-combination');
+            get().setPendingAutoCount(true);
+        } else if (phase === 'learn-thousands-combination-ready') {
+            get().setPhase('challenge-thousands-1');
+        } else if (phase === 'challenge-thousands-1-ready') {
+            const nextChallenge = THOUSANDS_CHALLENGES[1];
+            set({ phase: nextChallenge.phase });
+            get().updateButtonVisibility();
+            get().setFeedback(`🎯 DÉFI 2 : Affiche le nombre **${nextChallenge.targets[0]}** !`);
+        } else if (phase === 'challenge-thousands-2-ready') {
+            const nextChallenge = THOUSANDS_CHALLENGES[2];
+            set({ phase: nextChallenge.phase });
+            get().updateButtonVisibility();
+            get().setFeedback(`🎯 DÉFI 3 : Affiche le nombre **${nextChallenge.targets[0]}** !`);
+        } else if (phase === 'challenge-thousands-3-ready') {
+            set({ phase: 'normal' });
+            get().updateButtonVisibility();
+            sequenceFeedback("APPRENTISSAGE DES MILLIERS TERMINÉ ! Bravo ! 🎉 Tu es un expert des nombres !", "🏆 Tu peux maintenant créer n'importe quel nombre jusqu'à 9999 !", FEEDBACK_DELAY / 1.5);
         }
     },
 
@@ -1206,6 +1279,36 @@ export const useStore = create<MachineState>((set, get) => ({
             }
             case 'normal':
                 newInstruction = "Mode exploration ! 🚀 Construis des grands nombres !";
+                break;
+            // Ready states - show instruction to continue
+            case 'intro-welcome-ready':
+            case 'intro-discover-ready':
+            case 'intro-add-roll-ready':
+            case 'tutorial-ready':
+            case 'explore-units-ready':
+            case 'click-add-ready':
+            case 'click-remove-ready':
+            case 'challenge-unit-1-ready':
+            case 'challenge-unit-2-ready':
+            case 'challenge-unit-3-ready':
+            case 'learn-carry-ready':
+            case 'learn-units-ready':
+            case 'learn-tens-ready':
+            case 'learn-tens-combination-ready':
+            case 'challenge-tens-1-ready':
+            case 'challenge-tens-2-ready':
+            case 'challenge-tens-3-ready':
+            case 'learn-hundreds-ready':
+            case 'learn-hundreds-combination-ready':
+            case 'challenge-hundreds-1-ready':
+            case 'challenge-hundreds-2-ready':
+            case 'challenge-hundreds-3-ready':
+            case 'learn-thousands-ready':
+            case 'learn-thousands-combination-ready':
+            case 'challenge-thousands-1-ready':
+            case 'challenge-thousands-2-ready':
+            case 'challenge-thousands-3-ready':
+                newInstruction = "Clique sur 'Continuer' pour passer à la prochaine étape ! 🎯";
                 break;
             default:
                 newInstruction = "Prépare-toi pour l'aventure des nombres !";
