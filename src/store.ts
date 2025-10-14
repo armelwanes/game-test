@@ -331,9 +331,25 @@ export const useStore = create<MachineState>((set, get) => ({
             ];
             const currentExampleIndex = examples.findIndex(ex => ex.tens === columns[1].value && ex.units === columns[0].value);
 
-            if (currentExampleIndex < examples.length - 1) {
+            // If we're at [0, 0], set the first example
+            if (currentExampleIndex === -1) {
+                const firstExample = examples[0];
+                get().setColumns(() => {
+                    const newCols = [...initialColumns];
+                    newCols[1].value = firstExample.tens;
+                    newCols[0].value = firstExample.units;
+                    newCols[1].unlocked = true;
+                    return newCols;
+                });
+                const total = firstExample.tens * 10 + firstExample.units;
+                get().setFeedback(`**${total}** (${firstExample.name}) ! ${firstExample.tens} dizaine(s) + ${firstExample.units} unité(s) = ${total} !`);
                 const newTimer = setTimeout(() => {
-                    const nextExample = examples[currentExampleIndex + 1] || examples[0];
+                    get().runAutoCount();
+                }, COUNT_SPEED);
+                set({ timer: newTimer as unknown as number });
+            } else if (currentExampleIndex < examples.length - 1) {
+                const newTimer = setTimeout(() => {
+                    const nextExample = examples[currentExampleIndex + 1];
                      get().setColumns(() => {
                         const newCols = [...initialColumns];
                         newCols[1].value = nextExample.tens;
@@ -410,9 +426,27 @@ export const useStore = create<MachineState>((set, get) => ({
             ];
             const currentExampleIndex = examples.findIndex(ex => ex.hundreds === columns[2].value && ex.tens === columns[1].value && ex.units === columns[0].value);
 
-            if (currentExampleIndex < examples.length - 1) {
+            // If we're at [0, 0, 0], set the first example
+            if (currentExampleIndex === -1) {
+                const firstExample = examples[0];
+                get().setColumns(() => {
+                    const newCols = [...initialColumns];
+                    newCols[2].value = firstExample.hundreds;
+                    newCols[1].value = firstExample.tens;
+                    newCols[0].value = firstExample.units;
+                    newCols[1].unlocked = true;
+                    newCols[2].unlocked = true;
+                    return newCols;
+                });
+                const total = firstExample.hundreds * 100 + firstExample.tens * 10 + firstExample.units;
+                get().setFeedback(`**${total}** (${firstExample.name}) !`);
                 const newTimer = setTimeout(() => {
-                    const nextExample = examples[currentExampleIndex + 1] || examples[0];
+                    get().runAutoCount();
+                }, COUNT_SPEED);
+                set({ timer: newTimer as unknown as number });
+            } else if (currentExampleIndex < examples.length - 1) {
+                const newTimer = setTimeout(() => {
+                    const nextExample = examples[currentExampleIndex + 1];
                      get().setColumns(() => {
                         const newCols = [...initialColumns];
                         newCols[2].value = nextExample.hundreds;
@@ -487,9 +521,27 @@ export const useStore = create<MachineState>((set, get) => ({
             ];
             const currentExampleIndex = examples.findIndex(ex => ex.thousands === columns[3].value && ex.hundreds === columns[2].value && ex.tens === columns[1].value && ex.units === columns[0].value);
 
-            if (currentExampleIndex < examples.length - 1) {
+            // If we're at [0, 0, 0, 0], set the first example
+            if (currentExampleIndex === -1) {
+                const firstExample = examples[0];
+                get().setColumns(() => {
+                    const newCols = [...initialColumns];
+                    newCols[3].value = firstExample.thousands;
+                    newCols[2].value = firstExample.hundreds;
+                    newCols[1].value = firstExample.tens;
+                    newCols[0].value = firstExample.units;
+                    newCols.forEach(c => c.unlocked = true);
+                    return newCols;
+                });
+                const total = firstExample.thousands * 1000 + firstExample.hundreds * 100 + firstExample.tens * 10 + firstExample.units;
+                get().setFeedback(`**${total}** (${firstExample.name}) !`);
                 const newTimer = setTimeout(() => {
-                    const nextExample = examples[currentExampleIndex + 1] || examples[0];
+                    get().runAutoCount();
+                }, COUNT_SPEED);
+                set({ timer: newTimer as unknown as number });
+            } else if (currentExampleIndex < examples.length - 1) {
+                const newTimer = setTimeout(() => {
+                    const nextExample = examples[currentExampleIndex + 1];
                      get().setColumns(() => {
                         const newCols = [...initialColumns];
                         newCols[3].value = nextExample.thousands;
