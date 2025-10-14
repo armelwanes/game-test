@@ -545,6 +545,7 @@ export const useStore = create<MachineState>((set, get) => ({
                         phase: 'challenge-unit-1',
                         isTransitioningToChallenge: false
                     });
+                    get().updateButtonVisibility();
                     get().setFeedback(`🎯 DÉFI 1 : Affiche le nombre **${UNIT_CHALLENGES[0].targets[0]}** avec les boutons, puis clique sur VALIDER !`);
                 }, FEEDBACK_DELAY * 2);
                 return;
@@ -670,6 +671,7 @@ export const useStore = create<MachineState>((set, get) => ({
                         columns: newCols,
                         phase: 'challenge-unit-1'
                     });
+                    get().updateButtonVisibility();
                     get().setFeedback(`Bravo ! 🎉 Maintenant, DÉFI 1 : Affiche le nombre **${UNIT_CHALLENGES[0].targets[0]}** avec les boutons, puis clique sur VALIDER !`);
                 }, FEEDBACK_DELAY);
             } else if (unitsValue > 0) {
@@ -768,6 +770,7 @@ export const useStore = create<MachineState>((set, get) => ({
                             phase: nextChallenge.phase,
                             columns: resetCols
                         });
+                        get().updateButtonVisibility();
                         get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
                     }, FEEDBACK_DELAY * 2);
                 }
@@ -820,6 +823,7 @@ export const useStore = create<MachineState>((set, get) => ({
                             phase: nextChallenge.phase,
                             columns: resetCols
                         });
+                        get().updateButtonVisibility();
                         get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
                     }, FEEDBACK_DELAY * 2);
                 }
@@ -866,6 +870,7 @@ export const useStore = create<MachineState>((set, get) => ({
                             phase: nextChallenge.phase,
                             columns: resetCols
                         });
+                        get().updateButtonVisibility();
                         get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
                     }, FEEDBACK_DELAY * 2);
                 }
