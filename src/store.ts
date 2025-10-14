@@ -1,3 +1,16 @@
+// =============================================================================
+// STORE ZUSTAND - MACHINE À NOMBRES
+// =============================================================================
+// Ce fichier contient toute la logique de gestion d'état de l'application
+// "Machine à Nombres", une application éducative pour apprendre les nombres
+// de 0 à 9999 en utilisant le système positionnel (unités, dizaines, centaines, milliers).
+//
+// Architecture:
+// - État global: stocke toutes les données (colonnes, phase, feedback, etc.)
+// - Actions: fonctions pour modifier l'état et gérer la logique métier
+// - Phases: différentes étapes du parcours d'apprentissage (voir types.ts)
+// =============================================================================
+
 import { create } from 'zustand';
 import type {
     MachineState,
@@ -11,6 +24,18 @@ import {
     THOUSANDS_CHALLENGES
 } from './types.ts';
 
+// -----------------------------------------------------------------------------
+// CONFIGURATION INITIALE DES COLONNES
+// -----------------------------------------------------------------------------
+// Chaque colonne représente une position dans le système décimal:
+// - Unités (0-9): position des unités
+// - Dizaines (0-9): position des dizaines (x10)
+// - Centaines (0-9): position des centaines (x100)
+// - Milliers (0-9): position des milliers (x1000)
+//
+// Les colonnes commencent verrouillées (sauf les unités) et sont débloquées
+// progressivement au fur et à mesure que l'utilisateur progresse.
+// -----------------------------------------------------------------------------
 export const initialColumns: Column[] = [
     { name: 'Unités', value: 0, unlocked: true, color: 'bg-green-500' },
     { name: 'Dizaines', value: 0, unlocked: false, color: 'bg-blue-500' },
@@ -18,72 +43,161 @@ export const initialColumns: Column[] = [
     { name: 'Milliers', value: 0, unlocked: false, color: 'bg-red-500' },
 ];
 
+// =============================================================================
+// CRÉATION DU STORE ZUSTAND
+// =============================================================================
+// Zustand est une bibliothèque de gestion d'état légère.
+// create<MachineState>() crée un store avec le type MachineState défini dans types.ts
+// set() permet de modifier l'état
+// get() permet de lire l'état actuel
+// =============================================================================
 export const useStore = create<MachineState>((set, get) => ({
+    // -------------------------------------------------------------------------
+    // ÉTAT DE LA MACHINE
+    // -------------------------------------------------------------------------
+    // columns: Les 4 colonnes (Unités, Dizaines, Centaines, Milliers)
     columns: initialColumns,
+    
+    // phase: La phase actuelle du parcours pédagogique (voir types.ts pour la liste complète)
     phase: 'intro-welcome',
+    
+    // addClicks: Compteur du nombre de clics sur les boutons d'ajout (utilisé pour la progression)
     addClicks: 0,
+    
+    // feedback: Message de feedback affiché à l'utilisateur (zone assistant)
     feedback: "",
+    
+    // typedInstruction / typedFeedback: Texte en cours de frappe (effet machine à écrire)
     typedInstruction: "",
     typedFeedback: "",
+    
+    // isTyping*: Indicateurs si un texte est en cours de frappe (désactive certaines actions)
     isTypingInstruction: false,
     isTypingFeedback: false,
+    
+    // pendingAutoCount: Indique qu'un auto-comptage est en attente (après fin d'animation texte)
     pendingAutoCount: false,
+    
+    // isTransitioningToChallenge: Indique une transition en cours vers un défi
     isTransitioningToChallenge: false,
+    
+    // isCountingAutomatically: Indique si la machine compte automatiquement (mode démonstration)
     isCountingAutomatically: false,
+    
+    // nextPhaseAfterAuto: Phase cible après la fin d'un auto-comptage
     nextPhaseAfterAuto: null,
+    
+    // timer: Référence au timer actif (pour pouvoir l'annuler si besoin)
     timer: null,
+    
+    // -------------------------------------------------------------------------
+    // PROGRESSION DES DÉFIS
+    // -------------------------------------------------------------------------
+    // Suivi des défis complétés (débloque les niveaux suivants)
     completedChallenges: {
-        tens: false,
-        hundreds: false,
-        thousands: false,
+        tens: false,        // Défis des dizaines complétés
+        hundreds: false,    // Défis des centaines complétés
+        thousands: false,   // Défis des milliers complétés
     },
-    unitTargetIndex: 0,
-    unitSuccessCount: 0,
-    tensTargetIndex: 0,
-    tensSuccessCount: 0,
-    hundredsTargetIndex: 0,
-    hundredsSuccessCount: 0,
-    thousandsTargetIndex: 0,
-    thousandsSuccessCount: 0,
+    
+    // Indices et compteurs de progression pour chaque type de défi
+    unitTargetIndex: 0,      // Index de la cible actuelle dans le défi des unités
+    unitSuccessCount: 0,     // Nombre de réussites dans le défi des unités
+    tensTargetIndex: 0,      // Index de la cible actuelle dans le défi des dizaines
+    tensSuccessCount: 0,     // Nombre de réussites dans le défi des dizaines
+    hundredsTargetIndex: 0,  // Index de la cible actuelle dans le défi des centaines
+    hundredsSuccessCount: 0, // Nombre de réussites dans le défi des centaines
+    thousandsTargetIndex: 0, // Index de la cible actuelle dans le défi des milliers
+    thousandsSuccessCount: 0,// Nombre de réussites dans le défi des milliers
+    
+    // -------------------------------------------------------------------------
+    // INTERACTIONS UTILISATEUR
+    // -------------------------------------------------------------------------
+    // instruction: Consigne affichée en haut de l'assistant pédagogique
     instruction: "(Bruits de marteau sur du métal et de perceuse) Paf, Crac… Bim… Tchac ! Quel vacarme ! Voilà, j'ai terminé ma nouvelle machine !",
+    
+    // userInput: Réponse saisie par l'utilisateur (pour les questions)
     userInput: "",
+    
+    // showInputField: Affiche le champ de saisie pour les questions
     showInputField: false,
 
-    // Button visibility
-    showUnlockButton: false,
-    showStartLearningButton: false,
-    showValidateLearningButton: false,
-    showValidateTensButton: false,
-    showValidateHundredsButton: false,
-    showValidateThousandsButton: false,
+    // -------------------------------------------------------------------------
+    // VISIBILITÉ DES BOUTONS
+    // -------------------------------------------------------------------------
+    // Ces flags contrôlent l'affichage des différents boutons d'action
+    showUnlockButton: false,             // Bouton "Débloquer la colonne suivante"
+    showStartLearningButton: false,      // Bouton "Commencer l'apprentissage"
+    showValidateLearningButton: false,   // Bouton "Valider" pour les défis des unités
+    showValidateTensButton: false,       // Bouton "Valider" pour les défis des dizaines
+    showValidateHundredsButton: false,   // Bouton "Valider" pour les défis des centaines
+    showValidateThousandsButton: false,  // Bouton "Valider" pour les défis des milliers
 
-    // Actions
+    // =========================================================================
+    // ACTIONS DE MODIFICATION D'ÉTAT (SETTERS)
+    // =========================================================================
+    // Ces fonctions permettent de modifier l'état du store.
+    // Certaines déclenchent des effets de bord (updateInstruction, updateButtonVisibility)
+    // =========================================================================
+    
+    // -------------------------------------------------------------------------
+    // Gestion des colonnes
+    // -------------------------------------------------------------------------
+    // setColumns: Met à jour les valeurs des colonnes et recalcule la visibilité des boutons
+    // Paramètre: updater peut être un tableau de colonnes ou une fonction qui transforme les colonnes actuelles
     setColumns: (updater) => {
         const newColumns = typeof updater === 'function' ? updater(get().columns) : updater;
         set({ columns: newColumns });
         get().updateButtonVisibility();
     },
+    
+    // -------------------------------------------------------------------------
+    // Gestion de la phase
+    // -------------------------------------------------------------------------
+    // setPhase: Change la phase actuelle (étape du parcours pédagogique)
+    // Déclenche la mise à jour de l'instruction et de la visibilité des boutons
     setPhase: (phase) => {
         set({ phase });
         get().updateInstruction();
         get().updateButtonVisibility();
     },
+    
+    // -------------------------------------------------------------------------
+    // Gestion des interactions utilisateur
+    // -------------------------------------------------------------------------
     setAddClicks: (clicks) => set({ addClicks: clicks }),
+    
+    // setFeedback: Affiche un message de feedback dans l'assistant pédagogique
+    // Le message est ajouté à la file d'attente pour un effet de frappe progressif
     setFeedback: (feedback) => {
         if (feedback) {
             get().enqueueMessage({ kind: 'feedback', text: feedback });
         }
         set({ feedback });
     },
+    
+    // -------------------------------------------------------------------------
+    // Gestion de l'effet de frappe (typing)
+    // -------------------------------------------------------------------------
     setTypedInstruction: (instruction) => set({ typedInstruction: instruction }),
     setTypedFeedback: (feedback) => set({ typedFeedback: feedback }),
     setIsTypingInstruction: (isTyping) => set({ isTypingInstruction: isTyping }),
     setIsTypingFeedback: (isTyping) => set({ isTypingFeedback: isTyping }),
+    
+    // -------------------------------------------------------------------------
+    // Gestion de l'auto-comptage (mode démonstration)
+    // -------------------------------------------------------------------------
     setPendingAutoCount: (pending) => set({ pendingAutoCount: pending }),
     setIsTransitioningToChallenge: (isTransitioning) => set({ isTransitioningToChallenge: isTransitioning }),
     setIsCountingAutomatically: (isCounting) => set({ isCountingAutomatically: isCounting }),
     setNextPhaseAfterAuto: (phase) => set({ nextPhaseAfterAuto: phase }),
+    
+    // -------------------------------------------------------------------------
+    // Gestion de la progression des défis
+    // -------------------------------------------------------------------------
     setCompletedChallenges: (updater) => set((state) => ({ completedChallenges: typeof updater === 'function' ? updater(state.completedChallenges) : updater })),
+    
+    // Setters avec mise à jour automatique de l'instruction
     setUnitTargetIndex: (index) => {
         set({ unitTargetIndex: index });
         get().updateInstruction();
@@ -116,6 +230,8 @@ export const useStore = create<MachineState>((set, get) => ({
         set({ thousandsSuccessCount: count });
         get().updateInstruction();
     },
+    
+    // Fonctions de réinitialisation des défis
     resetUnitChallenge: () => {
         set({ unitTargetIndex: 0, unitSuccessCount: 0 });
         get().updateInstruction();
@@ -132,13 +248,24 @@ export const useStore = create<MachineState>((set, get) => ({
         set({ thousandsTargetIndex: 0, thousandsSuccessCount: 0 });
         get().updateInstruction();
     },
+    
+    // -------------------------------------------------------------------------
+    // Gestion des champs de saisie (questions)
+    // -------------------------------------------------------------------------
     setUserInput: (input) => set({ userInput: input }),
     setShowInputField: (show) => set({ showInputField: show }),
     
+    // =========================================================================
+    // GESTION DES RÉPONSES AUX QUESTIONS
+    // =========================================================================
+    // handleUserInputSubmit: Traite la réponse de l'utilisateur aux questions posées
+    // Utilisé pour les phases d'introduction qui demandent une interaction textuelle
+    // =========================================================================
     handleUserInputSubmit: () => {
         const { phase, userInput, sequenceFeedback } = get();
         const answer = parseInt(userInput.trim());
         
+        // Question: "Combien de chiffres différents as-tu vu ?" (Réponse attendue: 10 ou 9)
         if (phase === 'intro-question-digits') {
             if (answer === 9) {
                 sequenceFeedback(
@@ -206,6 +333,12 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
+    // =========================================================================
+    // MISE À JOUR DE LA VISIBILITÉ DES BOUTONS
+    // =========================================================================
+    // updateButtonVisibility: Détermine quels boutons d'action doivent être affichés
+    // en fonction de la phase actuelle et de l'état de la machine
+    // =========================================================================
     updateButtonVisibility: () => {
         const { phase, columns } = get();
         const allColumnsUnlocked = columns.every(col => col.unlocked);
@@ -220,6 +353,21 @@ export const useStore = create<MachineState>((set, get) => ({
         });
     },
 
+    // =========================================================================
+    // AUTO-COMPTAGE (MODE DÉMONSTRATION)
+    // =========================================================================
+    // runAutoCount: Fait compter automatiquement la machine pour montrer à l'utilisateur
+    // comment fonctionnent les nombres. Utilisé dans les phases d'apprentissage (learn-*)
+    //
+    // Fonctionnement:
+    // 1. Incrémente automatiquement la colonne appropriée (unités, dizaines, centaines, milliers)
+    // 2. Affiche des messages pédagogiques à chaque étape
+    // 3. S'arrête à 9 et transite vers la phase suivante (challenge)
+    // 4. Utilise des setTimeout pour espacer les incrémentations (COUNT_SPEED = 1800ms)
+    //
+    // Note: Cette fonction utilise setTimeout de manière récursive pour créer l'effet
+    // d'animation. Chaque incrément appelle runAutoCount() à nouveau après un délai.
+    // =========================================================================
     runAutoCount: () => {
         const { phase, isCountingAutomatically, columns, nextPhaseAfterAuto, timer } = get();
         const COUNT_SPEED = 1800; // Vitesse de l'auto-incrémentation ralentie pour le commentaire
@@ -572,13 +720,58 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
-    // --- LOGIQUE MÉTIER ---
+    // =========================================================================
+    // LOGIQUE MÉTIER - GESTION DES INTERACTIONS
+    // =========================================================================
+    // Ces fonctions implémentent la logique principale de l'application:
+    // - Affichage de messages en séquence
+    // - Gestion des clics sur les boutons +/-
+    // - Validation des défis
+    // - Progression dans les phases
+    // =========================================================================
 
+    // -------------------------------------------------------------------------
+    // sequenceFeedback: Affiche deux messages de feedback l'un après l'autre
+    // -------------------------------------------------------------------------
+    // Paramètres:
+    //   - first: Premier message à afficher
+    //   - second: Deuxième message à afficher après un délai
+    //   - delay: Délai en ms avant d'afficher le second message (défaut: FEEDBACK_DELAY = 2500ms)
+    //
+    // Utilisation: Permet de créer des dialogues pédagogiques fluides
+    // Exemple: "Bravo !" puis après 2.5s "Continue comme ça !"
+    //
+    // Note: Cette fonction utilise setTimeout pour espacer les messages
+    // -------------------------------------------------------------------------
     sequenceFeedback: (first: string, second: string, delay = FEEDBACK_DELAY) => {
         get().setFeedback(first);
         setTimeout(() => get().setFeedback(second), delay);
     },
 
+    // =========================================================================
+    // GESTION DU BOUTON AJOUTER (+)
+    // =========================================================================
+    // handleAdd: Gère les clics sur les boutons "△" (ajouter)
+    //
+    // Paramètre:
+    //   - idx: Index de la colonne cliquée (0=unités, 1=dizaines, 2=centaines, 3=milliers)
+    //
+    // Logique:
+    // 1. Vérifie que l'action est autorisée (pas en auto-comptage, colonne débloquée, etc.)
+    // 2. Incrémente la valeur de la colonne
+    // 3. Gère les retenues automatiques (9+1 = 0 dans cette colonne, +1 dans la suivante)
+    // 4. Affiche des messages pédagogiques adaptés à la phase actuelle
+    // 5. Transite vers la phase suivante si nécessaire (ex: après avoir atteint 9)
+    //
+    // Phases spéciales gérées:
+    // - intro-welcome / intro-discover: Introduction à la machine
+    // - intro-add-roll: Déverrouillage des dizaines
+    // - tutorial: Premiers pas avec les boutons
+    // - explore-units: Apprentissage des nombres de 1 à 3
+    // - click-add: Compter jusqu'à 9
+    // - challenge-unit-*: Défis des unités
+    // - learn-carry: Apprentissage de la retenue (9+1 = 10)
+    // =========================================================================
     handleAdd: (idx: number) => {
         const { isCountingAutomatically, isTransitioningToChallenge, phase, columns, addClicks, sequenceFeedback } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
@@ -790,6 +983,27 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
+    // =========================================================================
+    // GESTION DU BOUTON SOUSTRAIRE (-)
+    // =========================================================================
+    // handleSubtract: Gère les clics sur les boutons "∇" (soustraire)
+    //
+    // Paramètre:
+    //   - idx: Index de la colonne cliquée (0=unités, 1=dizaines, 2=centaines, 3=milliers)
+    //
+    // Logique:
+    // 1. Vérifie que l'action est autorisée (pas en auto-comptage, colonne débloquée, etc.)
+    // 2. Décrémente la valeur de la colonne
+    // 3. Gère les emprunts automatiques (0-1 nécessite d'emprunter à la colonne suivante)
+    //    Exemple: 10 - 1 = 09 (emprunte 1 aux dizaines, ajoute 10 aux unités)
+    // 4. Affiche des messages pédagogiques adaptés à la phase actuelle
+    // 5. Transite vers la phase suivante si nécessaire (ex: après avoir atteint 0)
+    //
+    // Phases spéciales gérées:
+    // - tutorial: Premiers pas avec le bouton soustraire
+    // - explore-units: Évite de soustraire pendant l'apprentissage de l'addition
+    // - click-remove: Compter à rebours de 9 à 0
+    // =========================================================================
     handleSubtract: (idx: number) => {
         const { isCountingAutomatically, phase, columns } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
@@ -892,6 +1106,24 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
+    // =========================================================================
+    // VALIDATION DES DÉFIS DES UNITÉS
+    // =========================================================================
+    // handleValidateLearning: Vérifie si l'utilisateur a correctement affiché le nombre demandé
+    // dans les défis des unités (challenge-unit-1, challenge-unit-2, challenge-unit-3)
+    //
+    // Logique:
+    // 1. Vérifie que la valeur affichée correspond à la cible
+    // 2. Si correct:
+    //    - Incrémente le compteur de réussites
+    //    - Passe à la cible suivante OU au défi suivant OU à la phase learn-carry
+    //    - Affiche un message de félicitations
+    // 3. Si incorrect:
+    //    - Affiche un message d'encouragement
+    //
+    // Progression:
+    // - Après challenge-unit-3 → learn-carry (apprentissage de la retenue)
+    // =========================================================================
     handleValidateLearning: () => {
         const { phase, columns, unitTargetIndex, unitSuccessCount, sequenceFeedback, resetUnitChallenge } = get();
         const challengePhases = ['challenge-unit-1', 'challenge-unit-2', 'challenge-unit-3'] as const;
@@ -943,6 +1175,17 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
+    // =========================================================================
+    // VALIDATION DES DÉFIS DES DIZAINES
+    // =========================================================================
+    // handleValidateTens: Vérifie si l'utilisateur a correctement affiché le nombre demandé
+    // dans les défis des dizaines (challenge-tens-1, challenge-tens-2, challenge-tens-3)
+    //
+    // Logique similaire à handleValidateLearning mais:
+    // - Vérifie le nombre total (dizaines + unités) au lieu de juste les unités
+    // - Après challenge-tens-3 → learn-hundreds (débloque les centaines)
+    // - Marque completedChallenges.tens = true
+    // =========================================================================
     handleValidateTens: () => {
         const { phase, columns, tensTargetIndex, tensSuccessCount, sequenceFeedback, resetTensChallenge } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
@@ -1002,6 +1245,16 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
+    // =========================================================================
+    // VALIDATION DES DÉFIS DES CENTAINES
+    // =========================================================================
+    // handleValidateHundreds: Vérifie si l'utilisateur a correctement affiché le nombre demandé
+    // dans les défis des centaines (challenge-hundreds-1, challenge-hundreds-2, challenge-hundreds-3)
+    //
+    // Logique similaire à handleValidateTens mais:
+    // - Après challenge-hundreds-3 → learn-thousands (débloque les milliers)
+    // - Marque completedChallenges.hundreds = true
+    // =========================================================================
     handleValidateHundreds: () => {
         const { phase, columns, hundredsTargetIndex, hundredsSuccessCount, sequenceFeedback, resetHundredsChallenge } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
@@ -1061,6 +1314,17 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
+    // =========================================================================
+    // VALIDATION DES DÉFIS DES MILLIERS
+    // =========================================================================
+    // handleValidateThousands: Vérifie si l'utilisateur a correctement affiché le nombre demandé
+    // dans les défis des milliers (challenge-thousands-1, challenge-thousands-2, challenge-thousands-3)
+    //
+    // Logique similaire aux autres validations mais:
+    // - Après challenge-thousands-3 → 'normal' (mode libre)
+    // - Marque completedChallenges.thousands = true
+    // - L'utilisateur a terminé tout le parcours pédagogique 🎉
+    // =========================================================================
     handleValidateThousands: () => {
         const { phase, columns, thousandsTargetIndex, thousandsSuccessCount, sequenceFeedback, resetThousandsChallenge } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
@@ -1109,6 +1373,23 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
+    // =========================================================================
+    // MISE À JOUR DE L'INSTRUCTION PÉDAGOGIQUE
+    // =========================================================================
+    // updateInstruction: Met à jour le texte d'instruction affiché dans l'assistant
+    // en fonction de la phase actuelle.
+    //
+    // L'instruction est le message principal qui guide l'utilisateur.
+    // Elle est différente du feedback qui réagit aux actions de l'utilisateur.
+    //
+    // Pour chaque phase, définit:
+    // - Un message d'introduction ou d'explication
+    // - Les objectifs à atteindre
+    // - Les consignes d'action
+    //
+    // L'instruction est automatiquement ajoutée à la file d'attente de messages
+    // pour créer un effet de frappe progressive.
+    // =========================================================================
     updateInstruction: () => {
         const { phase, unitTargetIndex, unitSuccessCount, tensTargetIndex, tensSuccessCount, hundredsTargetIndex, hundredsSuccessCount, thousandsTargetIndex, thousandsSuccessCount, instruction: oldInstruction, enqueueMessage } = get();
         let newInstruction = "";
@@ -1217,6 +1498,17 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
+    // =========================================================================
+    // DÉMARRAGE DE LA PHASE D'APPRENTISSAGE
+    // =========================================================================
+    // startLearningPhase: Lance l'apprentissage des nombres avec auto-comptage
+    // Appelé quand l'utilisateur clique sur "Commencer l'apprentissage"
+    //
+    // Configure:
+    // - La phase 'learn-units' (apprentissage des nombres 1-9)
+    // - Le mode auto-comptage (la machine compte automatiquement)
+    // - Les messages pédagogiques
+    // =========================================================================
     startLearningPhase: () => {
         const { phase, sequenceFeedback } = get();
         if (phase === 'done') {
@@ -1233,6 +1525,21 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
+    // =========================================================================
+    // DÉVERROUILLAGE DE LA COLONNE SUIVANTE
+    // =========================================================================
+    // unlockNextColumn: Déverrouille la prochaine colonne (dizaines, centaines ou milliers)
+    // Appelé quand l'utilisateur clique sur "Débloquer la colonne suivante"
+    //
+    // Vérifie:
+    // - Que les défis précédents sont complétés (completedChallenges)
+    // - Lance la phase d'apprentissage correspondante (learn-*)
+    //
+    // Progression:
+    // - Dizaines: nécessite completedChallenges.tens = true
+    // - Centaines: nécessite completedChallenges.tens = true
+    // - Milliers: nécessite completedChallenges.hundreds = true
+    // =========================================================================
     unlockNextColumn: () => {
         const { columns, completedChallenges, sequenceFeedback } = get();
         const nextIdx = columns.findIndex((col: Column, i: number) => !col.unlocked && i > 0);
@@ -1285,6 +1592,11 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
+    // =========================================================================
+    // INITIALISATION DU STORE
+    // =========================================================================
+    // init: Appelé au démarrage de l'application pour afficher l'instruction initiale
+    // =========================================================================
     init: () => {
         const { instruction, enqueueMessage } = get();
         if (instruction) {
@@ -1292,19 +1604,40 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
-    // Typing effect state and actions
+    // =========================================================================
+    // SYSTÈME DE FILE D'ATTENTE POUR L'EFFET DE FRAPPE
+    // =========================================================================
+    // Gère l'affichage progressif des messages avec un effet "machine à écrire".
+    // Les messages sont ajoutés à une file d'attente et traités séquentiellement.
+    //
+    // Fonctionnement:
+    // 1. enqueueMessage: Ajoute un message à la file
+    // 2. processQueue: Traite la file en affichant chaque message caractère par caractère
+    // 3. Attend 3 secondes entre chaque message pour laisser le temps de lire
+    //
+    // Types de messages:
+    // - 'instruction': Message principal (en haut de l'assistant)
+    // - 'feedback': Message de réaction (en bas de l'assistant)
+    // =========================================================================
+    
+    // File d'attente des messages à afficher
     queue: [],
+    
+    // Indicateur si la file est en cours de traitement (évite les doublons)
     isProcessingQueue: false,
 
+    // Ajoute un message à la file et lance le traitement
     enqueueMessage: (message) => {
       set((state) => ({ queue: [...state.queue, message] }));
       get().processQueue();
     },
 
+    // Setter interne pour l'état de traitement
     _setIsProcessingQueue: (isProcessing) => {
       set({ isProcessingQueue: isProcessing });
     },
 
+    // Traite la file d'attente de messages (fonction asynchrone)
     processQueue: async () => {
       const { isProcessingQueue, _setIsProcessingQueue, setTypedInstruction, setTypedFeedback, setIsTypingInstruction, setIsTypingFeedback } = get();
       
