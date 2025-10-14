@@ -41,13 +41,6 @@ function MachineANombres() {
     init();
   }, [init]);
 
-  useEffect(() => {
-    if (pendingAutoCount) {
-      setIsCountingAutomatically(true);
-      setPendingAutoCount(false);
-    }
-  }, [pendingAutoCount, setIsCountingAutomatically, setPendingAutoCount]);
-
   const totalNumber = useMemo(() =>
     columns.reduce((acc, col, idx) => acc + col.value * Math.pow(10, idx), 0),
     [columns]
