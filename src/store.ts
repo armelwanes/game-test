@@ -132,6 +132,14 @@ export const useStore = create<MachineState>((set, get) => ({
     showValidateTensButton: false,       // Bouton "Valider" pour les défis des dizaines
     showValidateHundredsButton: false,   // Bouton "Valider" pour les défis des centaines
     showValidateThousandsButton: false,  // Bouton "Valider" pour les défis des milliers
+    showContinueButton: false,           // Bouton "Continuer" pour les transitions manuelles
+    
+    // -------------------------------------------------------------------------
+    // ACTION EN ATTENTE (POUR LES TRANSITIONS MANUELLES)
+    // -------------------------------------------------------------------------
+    // pendingAction: Fonction à exécuter quand l'utilisateur clique sur "Continuer"
+    // Remplace les setTimeout pour les transitions de phase et séquences de feedback
+    pendingAction: null,
 
     // =========================================================================
     // ACTIONS DE MODIFICATION D'ÉTAT (SETTERS)
@@ -255,6 +263,23 @@ export const useStore = create<MachineState>((set, get) => ({
     setUserInput: (input) => set({ userInput: input }),
     setShowInputField: (show) => set({ showInputField: show }),
     
+    // -------------------------------------------------------------------------
+    // Gestion des actions en attente (transitions manuelles)
+    // -------------------------------------------------------------------------
+    // setPendingAction: Enregistre une fonction à exécuter plus tard et affiche le bouton "Continuer"
+    setPendingAction: (action) => {
+        set({ pendingAction: action, showContinueButton: action !== null });
+    },
+    
+    // executePendingAction: Exécute l'action en attente et cache le bouton "Continuer"
+    executePendingAction: () => {
+        const { pendingAction } = get();
+        if (pendingAction) {
+            set({ pendingAction: null, showContinueButton: false });
+            pendingAction();
+        }
+    },
+    
     // =========================================================================
     // GESTION DES RÉPONSES AUX QUESTIONS
     // =========================================================================
@@ -338,6 +363,7 @@ export const useStore = create<MachineState>((set, get) => ({
     // =========================================================================
     // updateButtonVisibility: Détermine quels boutons d'action doivent être affichés
     // en fonction de la phase actuelle et de l'état de la machine
+    // Note: showContinueButton est géré par setPendingAction, pas ici
     // =========================================================================
     updateButtonVisibility: () => {
         const { phase, columns } = get();
@@ -350,6 +376,7 @@ export const useStore = create<MachineState>((set, get) => ({
             showValidateTensButton: phase.startsWith('challenge-tens-'),
             showValidateHundredsButton: phase.startsWith('challenge-hundreds-'),
             showValidateThousandsButton: phase.startsWith('challenge-thousands-'),
+            // showContinueButton est géré séparément par setPendingAction
         });
     },
 
@@ -735,17 +762,24 @@ export const useStore = create<MachineState>((set, get) => ({
     // -------------------------------------------------------------------------
     // Paramètres:
     //   - first: Premier message à afficher
-    //   - second: Deuxième message à afficher après un délai
-    //   - delay: Délai en ms avant d'afficher le second message (défaut: FEEDBACK_DELAY = 2500ms)
+    //   - second: Deuxième message à afficher (maintenant déclenché par bouton)
+    //   - _delay: (OBSOLÈTE - conservé pour compatibilité mais non utilisé)
     //
     // Utilisation: Permet de créer des dialogues pédagogiques fluides
-    // Exemple: "Bravo !" puis après 2.5s "Continue comme ça !"
+    // Exemple: "Bravo !" puis clic sur "Continuer" → "Continue comme ça !"
     //
-    // Note: Cette fonction utilise setTimeout pour espacer les messages
+    // NOUVEAU COMPORTEMENT: 
+    // - Affiche le premier message immédiatement
+    // - Enregistre le second message comme action en attente
+    // - Affiche un bouton "Continuer" que l'utilisateur doit cliquer
+    // - Plus de setTimeout ! Tout est contrôlé par l'utilisateur
     // -------------------------------------------------------------------------
-    sequenceFeedback: (first: string, second: string, delay = FEEDBACK_DELAY) => {
+    sequenceFeedback: (first: string, second: string, _delay = FEEDBACK_DELAY) => {
         get().setFeedback(first);
-        setTimeout(() => get().setFeedback(second), delay);
+        // Au lieu de setTimeout, on enregistre une action en attente
+        get().setPendingAction(() => {
+            get().setFeedback(second);
+        });
     },
 
     // =========================================================================

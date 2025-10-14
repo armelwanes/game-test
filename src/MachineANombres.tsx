@@ -37,8 +37,10 @@ function MachineANombres() {
     showValidateTensButton,
     showValidateHundredsButton,
     showValidateThousandsButton,
+    showContinueButton,
     setUserInput,
     handleUserInputSubmit,
+    executePendingAction,
   } = useStore();
 
   useEffect(() => {
@@ -410,6 +412,38 @@ function MachineANombres() {
             </div>
           );
         })()}
+
+        {/* Bouton Continuer (pour les transitions manuelles) */}
+        {showContinueButton && (
+          <div style={{ marginTop: 20, textAlign: 'center' }}>
+            <button
+              onClick={executePendingAction}
+              style={{
+                fontSize: 16,
+                padding: '12px 32px',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
+                transition: 'all 0.2s ease',
+                animation: 'pulse 1.5s ease-in-out infinite'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
+              }}
+            >
+              ➡️ Continuer
+            </button>
+          </div>
+        )}
 
         {/* Boutons de phase (Débloquer / Commencer) */}
         {(showUnlockButton || showStartLearningButton) && (

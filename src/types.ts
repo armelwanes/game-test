@@ -107,6 +107,10 @@ export interface MachineState {
     showValidateTensButton: boolean;
     showValidateHundredsButton: boolean;
     showValidateThousandsButton: boolean;
+    showContinueButton: boolean;
+    
+    // Pending action state (for button-triggered transitions)
+    pendingAction: (() => void) | null;
 
     // Actions
     setColumns: (updater: ((columns: Column[]) => Column[]) | Column[]) => void;
@@ -140,6 +144,8 @@ export interface MachineState {
     setUserInput: (input: string) => void;
     setShowInputField: (show: boolean) => void;
     handleUserInputSubmit: () => void;
+    setPendingAction: (action: (() => void) | null) => void;
+    executePendingAction: () => void;
 
     // Typing effect state and actions
     queue: Array<{ kind: 'instruction' | 'feedback'; text: string }>;
