@@ -181,19 +181,19 @@ export const useStore = create<MachineState>((set, get) => ({
                     else if (nextValue === 7) infoMessage = "**7** : sept billes. SEPT doigts !";
                     else if (nextValue === 8) infoMessage = "**8** : huit billes. HUIT doigts !";
                     else if (nextValue === 9) infoMessage = "**9** : neuf billes. 🎯 La colonne est presque pleine ! Plus qu'un espace libre !";
-                    set({ feedback: infoMessage });
+                    get().setFeedback(infoMessage);
                     get().runAutoCount(); // Continue counting
                 }, COUNT_SPEED);
                 set({ timer: newTimer as unknown as number });
             } else { // unitsValue is 9
-                set({ feedback: "STOP ! 🛑 Le compteur est à 9. La colonne est PLEINE ! Attends, la machine va te montrer la suite !" });
+                get().setFeedback("STOP ! 🛑 Le compteur est à 9. La colonne est PLEINE ! Attends, la machine va te montrer la suite !");
                 const newTimer = setTimeout(() => {
                     const targetPhase = nextPhaseAfterAuto ?? 'challenge-unit-1';
                     get().setColumns(initialColumns);
                     get().setIsCountingAutomatically(false);
                     get().setNextPhaseAfterAuto(null);
                     get().resetUnitChallenge();
-                    set({ feedback: "Retour à zéro ! 🔄 Maintenant, c'est à toi de jouer !" });
+                    get().setFeedback("Retour à zéro ! 🔄 Maintenant, c'est à toi de jouer !");
 
                     setTimeout(() => {
                         get().setPhase(targetPhase);
@@ -228,16 +228,16 @@ export const useStore = create<MachineState>((set, get) => ({
                     if (nextValue === 1) infoMessage = `**${displayNumber}** (DIX) ! 🎯 Une dizaine = 10 unités !`;
                     else if (nextValue === 9) infoMessage = `**${displayNumber}** (QUATRE-VINGT-DIX) ! 🎯 Presque 100 !`;
                     else infoMessage = `**${displayNumber}** !`;
-                    set({ feedback: infoMessage });
+                    get().setFeedback(infoMessage);
                     get().runAutoCount(); // Continue counting
                 }, COUNT_SPEED);
                 set({ timer: newTimer as unknown as number });
             } else { // tensValue is 9
-                set({ feedback: "STOP ! 🛑 Le compteur est à 90. Tu as vu tous les nombres avec les dizaines ! Bravo !" });
+                get().setFeedback("STOP ! 🛑 Le compteur est à 90. Tu as vu tous les nombres avec les dizaines ! Bravo !");
                 const newTimer = setTimeout(() => {
                     get().setColumns(initialColumns);
                     get().setIsCountingAutomatically(false);
-                    set({ feedback: "Retour à zéro ! 🔄 Maintenant on va apprendre à combiner les dizaines et les unités !" });
+                    get().setFeedback("Retour à zéro ! 🔄 Maintenant on va apprendre à combiner les dizaines et les unités !");
                     setTimeout(() => {
                         get().setPhase('learn-tens-combination');
                         get().setPendingAutoCount(true);
@@ -267,17 +267,17 @@ export const useStore = create<MachineState>((set, get) => ({
                         return newCols;
                     });
                     const total = nextExample.tens * 10 + nextExample.units;
-                    set({ feedback: `**${total}** (${nextExample.name}) ! ${nextExample.tens} dizaine(s) + ${nextExample.units} unité(s) = ${total} !` });
+                    get().setFeedback(`**${total}** (${nextExample.name}) ! ${nextExample.tens} dizaine(s) + ${nextExample.units} unité(s) = ${total} !`);
                     get().runAutoCount();
                 }, COUNT_SPEED);
                 set({ timer: newTimer as unknown as number });
             } else {
-                 set({ feedback: "Bravo ! 🎉 Tu as vu comment combiner dizaines et unités ! Maintenant c'est à toi !" });
+                 get().setFeedback("Bravo ! 🎉 Tu as vu comment combiner dizaines et unités ! Maintenant c'est à toi !");
                  const newTimer = setTimeout(() => {
                     get().setColumns(initialColumns.map(c => ({...c, unlocked: c.name === 'Unités' || c.name === 'Dizaines'})));
                     get().setIsCountingAutomatically(false);
                     get().resetTensChallenge();
-                    set({ feedback: "Retour à zéro ! 🔄 À toi de jouer maintenant !" });
+                    get().setFeedback("Retour à zéro ! 🔄 À toi de jouer maintenant !");
                     setTimeout(() => {
                         get().setPhase('challenge-tens-1');
                     }, FEEDBACK_DELAY);
@@ -309,16 +309,16 @@ export const useStore = create<MachineState>((set, get) => ({
                     const displayNumber = nextValue * 100;
                     let infoMessage = `**${displayNumber}** !`;
                     if (nextValue === 1) infoMessage = `**${displayNumber}** (CENT) ! 🎯 Une centaine = 100 unités !`;
-                    set({ feedback: infoMessage });
+                    get().setFeedback(infoMessage);
                     get().runAutoCount(); // Continue counting
                 }, COUNT_SPEED);
                 set({ timer: newTimer as unknown as number });
             } else { // hundredsValue is 9
-                set({ feedback: "STOP ! 🛑 Le compteur est à 900. Tu as vu tous les nombres avec les centaines ! Bravo !" });
+                get().setFeedback("STOP ! 🛑 Le compteur est à 900. Tu as vu tous les nombres avec les centaines ! Bravo !");
                 const newTimer = setTimeout(() => {
                     get().setColumns(initialColumns);
                     get().setIsCountingAutomatically(false);
-                    set({ feedback: "Retour à zéro ! 🔄 Maintenant on va apprendre à combiner les centaines, dizaines et unités !" });
+                    get().setFeedback("Retour à zéro ! 🔄 Maintenant on va apprendre à combiner les centaines, dizaines et unités !");
                     setTimeout(() => {
                         get().setPhase('learn-hundreds-combination');
                         get().setPendingAutoCount(true);
@@ -348,17 +348,17 @@ export const useStore = create<MachineState>((set, get) => ({
                         return newCols;
                     });
                     const total = nextExample.hundreds * 100 + nextExample.tens * 10 + nextExample.units;
-                    set({ feedback: `**${total}** (${nextExample.name}) !` });
+                    get().setFeedback(`**${total}** (${nextExample.name}) !`);
                     get().runAutoCount();
                 }, COUNT_SPEED);
                 set({ timer: newTimer as unknown as number });
             } else {
-                 set({ feedback: "Bravo ! 🎉 Tu as vu comment combiner les centaines ! C'est à toi !" });
+                 get().setFeedback("Bravo ! 🎉 Tu as vu comment combiner les centaines ! C'est à toi !");
                  const newTimer = setTimeout(() => {
                     get().setColumns(initialColumns.map(c => ({...c, unlocked: ['Unités', 'Dizaines', 'Centaines'].includes(c.name)})));
                     get().setIsCountingAutomatically(false);
                     get().resetHundredsChallenge();
-                    set({ feedback: "Retour à zéro ! 🔄 À toi de jouer maintenant !" });
+                    get().setFeedback("Retour à zéro ! 🔄 À toi de jouer maintenant !");
                     setTimeout(() => {
                         get().setPhase('challenge-hundreds-1');
                     }, FEEDBACK_DELAY);
@@ -386,16 +386,16 @@ export const useStore = create<MachineState>((set, get) => ({
                     });
                     const nextValue = thousandsValue + 1;
                     const displayNumber = nextValue * 1000;
-                    set({ feedback: `**${displayNumber}** !` });
+                    get().setFeedback(`**${displayNumber}** !`);
                     get().runAutoCount();
                 }, COUNT_SPEED);
                 set({ timer: newTimer as unknown as number });
             } else {
-                set({ feedback: "STOP ! 🛑 Le compteur est à 9000. Bravo !" });
+                get().setFeedback("STOP ! 🛑 Le compteur est à 9000. Bravo !");
                 const newTimer = setTimeout(() => {
                     get().setColumns(initialColumns);
                     get().setIsCountingAutomatically(false);
-                    set({ feedback: "Retour à zéro ! 🔄 Apprenons à combiner tous les chiffres !" });
+                    get().setFeedback("Retour à zéro ! 🔄 Apprenons à combiner tous les chiffres !");
                     setTimeout(() => {
                         get().setPhase('learn-thousands-combination');
                         get().setPendingAutoCount(true);
@@ -425,17 +425,17 @@ export const useStore = create<MachineState>((set, get) => ({
                         return newCols;
                     });
                     const total = nextExample.thousands * 1000 + nextExample.hundreds * 100 + nextExample.tens * 10 + nextExample.units;
-                    set({ feedback: `**${total}** (${nextExample.name}) !` });
+                    get().setFeedback(`**${total}** (${nextExample.name}) !`);
                     get().runAutoCount();
                 }, COUNT_SPEED);
                 set({ timer: newTimer as unknown as number });
             } else {
-                 set({ feedback: "Bravo ! 🎉 Tu es un expert des grands nombres !" });
+                 get().setFeedback("Bravo ! 🎉 Tu es un expert des grands nombres !");
                  const newTimer = setTimeout(() => {
                     get().setColumns(initialColumns.map(c => ({...c, unlocked: true})));
                     get().setIsCountingAutomatically(false);
                     get().resetThousandsChallenge();
-                    set({ feedback: "Retour à zéro ! 🔄 À toi de jouer maintenant !" });
+                    get().setFeedback("Retour à zéro ! 🔄 À toi de jouer maintenant !");
                     setTimeout(() => {
                         get().setPhase('challenge-thousands-1');
                     }, FEEDBACK_DELAY);
@@ -448,8 +448,8 @@ export const useStore = create<MachineState>((set, get) => ({
     // --- LOGIQUE MÉTIER ---
 
     sequenceFeedback: (first: string, second: string, delay = FEEDBACK_DELAY) => {
-        set({ feedback: first });
-        setTimeout(() => set({ feedback: second }), delay);
+        get().setFeedback(first);
+        setTimeout(() => get().setFeedback(second), delay);
     },
 
     handleAdd: (idx: number) => {
@@ -471,7 +471,7 @@ export const useStore = create<MachineState>((set, get) => ({
         };
 
         if (!isAllowedColumn()) {
-            set({ feedback: "Concentrons-nous sur les colonnes actives pour l'instant !" });
+            get().setFeedback("Concentrons-nous sur les colonnes actives pour l'instant !");
             return;
         }
 
@@ -502,7 +502,8 @@ export const useStore = create<MachineState>((set, get) => ({
             else if (unitsValue === 3) sequenceFeedback("Magnifique ! 🎉 Essaie le bouton ROUGE (∇) maintenant !", "Le bouton ROUGE fait l'inverse du VERT ! Essaie-le !");
             else if (unitsValue > 3) {
                 newCols[0].value = 3;
-                set({ feedback: "Maintenant, clique sur le bouton ROUGE (∇) !", columns: newCols });
+                set({ columns: newCols });
+                get().setFeedback("Maintenant, clique sur le bouton ROUGE (∇) !");
                 return;
             }
         } else if (phase === 'explore-units') {
@@ -516,16 +517,19 @@ export const useStore = create<MachineState>((set, get) => ({
                 }, FEEDBACK_DELAY * 1.5);
             } else if (unitsValue > 3) {
                 newCols[0].value = 3;
-                set({ feedback: "Attends le signal pour continuer !", columns: newCols });
+                set({ columns: newCols });
+                get().setFeedback("Attends le signal pour continuer !");
                 return;
             }
         } else if (phase === 'click-add') {
             const nextValue = newCols[idx].value;
             if (nextValue > 9) {
                 newCols[idx].value = 9;
-                set({ feedback: "Parfait ! 🎉 Tu as atteint 9 ! Maintenant clique sur ∇ pour descendre à zéro !", columns: newCols });
+                set({ columns: newCols });
+                get().setFeedback("Parfait ! 🎉 Tu as atteint 9 ! Maintenant clique sur ∇ pour descendre à zéro !");
                 setTimeout(() => {
-                    set({ phase: 'click-remove', feedback: "Super ! Clique sur ∇ pour enlever les billes jusqu'à zéro !" });
+                    set({ phase: 'click-remove' });
+                    get().setFeedback("Super ! Clique sur ∇ pour enlever les billes jusqu'à zéro !");
                 }, FEEDBACK_DELAY);
                 return;
             }
@@ -539,22 +543,22 @@ export const useStore = create<MachineState>((set, get) => ({
                         columns: resetCols,
                         addClicks: 0,
                         phase: 'challenge-unit-1',
-                        feedback: `🎯 DÉFI 1 : Affiche le nombre **${UNIT_CHALLENGES[0].targets[0]}** avec les boutons, puis clique sur VALIDER !`,
                         isTransitioningToChallenge: false
                     });
+                    get().setFeedback(`🎯 DÉFI 1 : Affiche le nombre **${UNIT_CHALLENGES[0].targets[0]}** avec les boutons, puis clique sur VALIDER !`);
                 }, FEEDBACK_DELAY * 2);
                 return;
             }
             set({ addClicks: addClicks + 1 });
-            if (nextValue >= 4 && nextValue <= 8) set({ feedback: `**${nextValue}** ! Continue avec △ !` });
-            else set({ feedback: `Maintenant **${nextValue}** ! Clique sur △ !` });
-            setTimeout(() => set({ feedback: `${nextValue} billes. Continue avec △ !` }), FEEDBACK_DELAY);
+            if (nextValue >= 4 && nextValue <= 8) get().setFeedback(`**${nextValue}** ! Continue avec △ !`);
+            else get().setFeedback(`Maintenant **${nextValue}** ! Clique sur △ !`);
+            setTimeout(() => get().setFeedback(`${nextValue} billes. Continue avec △ !`), FEEDBACK_DELAY);
         } else if (phase.startsWith('challenge-unit-')) {
             const challengeIndex = parseInt(phase.split('-')[2]) - 1;
             const challenge = UNIT_CHALLENGES[challengeIndex];
             const targetNumber = challenge.targets[get().unitTargetIndex];
             if (newCols[0].value > targetNumber) {
-                set({ feedback: `Oups ! Tu as dépassé ${targetNumber}. Utilise ∇ pour revenir à ${targetNumber} !` });
+                get().setFeedback(`Oups ! Tu as dépassé ${targetNumber}. Utilise ∇ pour revenir à ${targetNumber} !`);
                 return;
             }
         } else if (phase === 'learn-carry' && hasCarry) {
@@ -570,9 +574,9 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback("Bravo ! 🎉 Maintenant on va apprendre les DIZAINES !", "Observe comment la machine compte par dizaines : 10, 20, 30... !");
             }, FEEDBACK_DELAY * 2);
         } else if (phase === 'normal' && hasCarry) {
-            set({ feedback: "Échange magique ! 10 billes → 1 bille dans la colonne de gauche ! 🎩" });
+            get().setFeedback("Échange magique ! 10 billes → 1 bille dans la colonne de gauche ! 🎩");
         } else if (phase === 'normal' || phase === 'done' || phase === 'learn-units') {
-            set({ feedback: `🎈 ${newCols[idx].value} bille${newCols[idx].value > 1 ? 's' : ''} dans ${newCols[idx].name}. Clique sur △ ou ∇ !` });
+            get().setFeedback(`🎈 ${newCols[idx].value} bille${newCols[idx].value > 1 ? 's' : ''} dans ${newCols[idx].name}. Clique sur △ ou ∇ !`);
         }
     },
 
@@ -595,7 +599,7 @@ export const useStore = create<MachineState>((set, get) => ({
         };
 
         if (!isAllowedColumn()) {
-            set({ feedback: "Concentrons-nous sur les colonnes actives pour l'instant !" });
+            get().setFeedback("Concentrons-nous sur les colonnes actives pour l'instant !");
             return;
         }
 
@@ -627,7 +631,7 @@ export const useStore = create<MachineState>((set, get) => ({
         if (tempTotalBefore > 0) {
             set({ columns: newCols });
             if (!['click-remove', 'tutorial', 'explore-units'].includes(phase) && !phase.startsWith('challenge-unit-')) {
-                set({ feedback: `🎈 ${newCols[idx].value} bille${newCols[idx].value > 1 ? 's' : ''} dans ${newCols[idx].name}. Clique sur △ ou ∇ !` });
+                get().setFeedback(`🎈 ${newCols[idx].value} bille${newCols[idx].value > 1 ? 's' : ''} dans ${newCols[idx].name}. Clique sur △ ou ∇ !`);
             }
         }
 
@@ -650,7 +654,7 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback(`Bien joué ! Continue à cliquer sur ROUGE !`, "Le bouton ROUGE retire une bille à chaque fois !");
             }
         } else if (phase === 'explore-units' && newCols[0].value < columns[0].value) {
-            set({ feedback: "On n'enlève pas encore ! Clique sur △ pour ajouter !" });
+            get().setFeedback("On n'enlève pas encore ! Clique sur △ pour ajouter !");
         } else if (phase === 'click-remove' && isUnitsColumn(idx)) {
             const unitsValue = newCols[0].value;
             if (unitsValue === 5) sequenceFeedback(`**${unitsValue}** (CINQ) ! ✋ Une main entière !`, `Bien joué ! Continue avec ∇ !`);
@@ -664,15 +668,15 @@ export const useStore = create<MachineState>((set, get) => ({
                     resetUnitChallenge();
                     set({
                         columns: newCols,
-                        phase: 'challenge-unit-1',
-                        feedback: `Bravo ! 🎉 Maintenant, DÉFI 1 : Affiche le nombre **${UNIT_CHALLENGES[0].targets[0]}** avec les boutons, puis clique sur VALIDER !`
+                        phase: 'challenge-unit-1'
                     });
+                    get().setFeedback(`Bravo ! 🎉 Maintenant, DÉFI 1 : Affiche le nombre **${UNIT_CHALLENGES[0].targets[0]}** avec les boutons, puis clique sur VALIDER !`);
                 }, FEEDBACK_DELAY);
             } else if (unitsValue > 0) {
                 sequenceFeedback(`**${unitsValue}** ! Baisse un doigt !`, `${unitsValue} doigts levés. Continue avec ∇ !`);
             }
         } else if (phase === 'normal' && hasBorrow) {
-            set({ feedback: "🔄 Emprunt magique ! Continue avec ∇ si nécessaire !" });
+            get().setFeedback("🔄 Emprunt magique ! Continue avec ∇ si nécessaire !");
         }
     },
 
@@ -692,37 +696,37 @@ export const useStore = create<MachineState>((set, get) => ({
 
             if (unitTargetIndex + 1 >= challenge.targets.length) {
                 if (challengeIndex === UNIT_CHALLENGES.length - 1) {
-                    set({ feedback: "🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les unités !" });
+                    get().setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les unités !");
                     setTimeout(() => {
                         set({ phase: 'learn-carry' });
                         sequenceFeedback("Prêt pour la magie ? 🎩 Clique sur △ pour l'échange 10 pour 1 !", "Vas-y ! Clique sur △ pour voir la transformation !");
                     }, FEEDBACK_DELAY);
                 } else {
-                    set({ feedback: `✅ DÉFI ${challengeIndex + 1} TERMINÉ ! Bravo !` });
+                    get().setFeedback(`✅ DÉFI ${challengeIndex + 1} TERMINÉ ! Bravo !`);
                     setTimeout(() => {
                         const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
                         resetUnitChallenge();
                         const nextPhase = challengePhases[challengeIndex + 1];
                         set({
                             columns: resetCols,
-                            phase: nextPhase,
-                            feedback: `🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${UNIT_CHALLENGES[challengeIndex + 1].targets[0]}** puis clique sur VALIDER !`
+                            phase: nextPhase
                         });
+                        get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${UNIT_CHALLENGES[challengeIndex + 1].targets[0]}** puis clique sur VALIDER !`);
                     }, FEEDBACK_DELAY);
                 }
             } else {
-                set({ feedback: "✅ Correct ! Bravo !" });
+                get().setFeedback("✅ Correct ! Bravo !");
                 setTimeout(() => {
                     const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
                     set({
                         columns: resetCols,
-                        unitTargetIndex: unitTargetIndex + 1,
-                        feedback: `🎯 DÉFI ${challengeIndex + 1} : Affiche le nombre **${challenge.targets[unitTargetIndex + 1]}** puis clique sur VALIDER ! (${newSuccessCount}/${challenge.targets.length})`
+                        unitTargetIndex: unitTargetIndex + 1
                     });
+                    get().setFeedback(`🎯 DÉFI ${challengeIndex + 1} : Affiche le nombre **${challenge.targets[unitTargetIndex + 1]}** puis clique sur VALIDER ! (${newSuccessCount}/${challenge.targets.length})`);
                 }, FEEDBACK_DELAY);
             }
         } else {
-            set({ feedback: `Pas encore ! Il faut ${targetNumber}. Utilise △ et ∇ !` });
+            get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Utilise △ et ∇ !`);
         }
     },
 
@@ -742,7 +746,7 @@ export const useStore = create<MachineState>((set, get) => ({
 
             if (tensTargetIndex + 1 >= challenge.targets.length) {
                 if (challengeIndex === TENS_CHALLENGES.length - 1) {
-                    set({ feedback: "🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les dizaines !" });
+                    get().setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les dizaines !");
                     set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, tens: true } }));
                     setTimeout(() => {
                         set({ phase: 'normal' });
@@ -756,15 +760,15 @@ export const useStore = create<MachineState>((set, get) => ({
                     }, FEEDBACK_DELAY * 2);
                 } else {
                     const nextChallenge = TENS_CHALLENGES[challengeIndex + 1];
-                    set({ feedback: `🎉 DÉFI ${challengeIndex + 1} RÉUSSIE ! Préparé pour le prochain ?` });
+                    get().setFeedback(`🎉 DÉFI ${challengeIndex + 1} RÉUSSIE ! Préparé pour le prochain ?`);
                     setTimeout(() => {
                         resetTensChallenge();
                         const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
                         set({
                             phase: nextChallenge.phase,
-                            columns: resetCols,
-                            feedback: `🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`
+                            columns: resetCols
                         });
+                        get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
                     }, FEEDBACK_DELAY * 2);
                 }
             } else {
@@ -774,7 +778,7 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback(`✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`, `Maintenant affiche **${nextTarget}** !`);
             }
         } else {
-            set({ feedback: `Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !` });
+            get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
         }
     },
 
@@ -794,7 +798,7 @@ export const useStore = create<MachineState>((set, get) => ({
 
             if (hundredsTargetIndex + 1 >= challenge.targets.length) {
                 if (challengeIndex === HUNDREDS_CHALLENGES.length - 1) {
-                    set({ feedback: "🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les centaines !" });
+                    get().setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les centaines !");
                     set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, hundreds: true } }));
                     setTimeout(() => {
                         set({ phase: 'normal' });
@@ -808,15 +812,15 @@ export const useStore = create<MachineState>((set, get) => ({
                     }, FEEDBACK_DELAY * 2);
                 } else {
                     const nextChallenge = HUNDREDS_CHALLENGES[challengeIndex + 1];
-                    set({ feedback: `🎉 DÉFI ${challengeIndex + 1} RÉUSSIE ! Préparé pour le prochain ?` });
+                    get().setFeedback(`🎉 DÉFI ${challengeIndex + 1} RÉUSSIE ! Préparé pour le prochain ?`);
                     setTimeout(() => {
                         resetHundredsChallenge();
                         const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
                         set({
                             phase: nextChallenge.phase,
-                            columns: resetCols,
-                            feedback: `🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`
+                            columns: resetCols
                         });
+                        get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
                     }, FEEDBACK_DELAY * 2);
                 }
             } else {
@@ -826,7 +830,7 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback(`✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`, `Maintenant affiche **${nextTarget}** !`);
             }
         } else {
-            set({ feedback: `Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !` });
+            get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
         }
     },
 
@@ -846,7 +850,7 @@ export const useStore = create<MachineState>((set, get) => ({
 
             if (thousandsTargetIndex + 1 >= challenge.targets.length) {
                 if (challengeIndex === THOUSANDS_CHALLENGES.length - 1) {
-                    set({ feedback: "🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les milliers !" });
+                    get().setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les milliers !");
                     set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, thousands: true } }));
                     setTimeout(() => {
                         set({ phase: 'normal' });
@@ -854,15 +858,15 @@ export const useStore = create<MachineState>((set, get) => ({
                     }, FEEDBACK_DELAY * 2);
                 } else {
                     const nextChallenge = THOUSANDS_CHALLENGES[challengeIndex + 1];
-                    set({ feedback: `🎉 DÉFI ${challengeIndex + 1} RÉUSSIE ! Préparé pour le prochain ?` });
+                    get().setFeedback(`🎉 DÉFI ${challengeIndex + 1} RÉUSSIE ! Préparé pour le prochain ?`);
                     setTimeout(() => {
                         resetThousandsChallenge();
                         const resetCols = get().columns.map((col: Column) => ({ ...col, unlocked: true }));
                         set({
                             phase: nextChallenge.phase,
-                            columns: resetCols,
-                            feedback: `🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`
+                            columns: resetCols
                         });
+                        get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
                     }, FEEDBACK_DELAY * 2);
                 }
             } else {
@@ -872,7 +876,7 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback(`✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`, `Maintenant affiche **${nextTarget}** !`);
             }
         } else {
-            set({ feedback: `Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !` });
+            get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
         }
     },
 
@@ -990,11 +994,11 @@ export const useStore = create<MachineState>((set, get) => ({
         if (nextIdx !== -1) {
             const newCols = [...columns];
             if (nextIdx === 1 && !completedChallenges.tens) {
-                set({ feedback: "⚠️ Tu dois d'abord compléter le défi des dizaines !" });
+                get().setFeedback("⚠️ Tu dois d'abord compléter le défi des dizaines !");
                 return;
             } else if (nextIdx === 2) {
                 if (!completedChallenges.tens) {
-                    set({ feedback: "⚠️ Tu dois d'abord maîtriser les dizaines !" });
+                    get().setFeedback("⚠️ Tu dois d'abord maîtriser les dizaines !");
                     return;
                 }
                 newCols[nextIdx].unlocked = true;
@@ -1011,7 +1015,7 @@ export const useStore = create<MachineState>((set, get) => ({
                 }, FEEDBACK_DELAY);
             } else if (nextIdx === 3) {
                 if (!completedChallenges.hundreds) {
-                    set({ feedback: "⚠️ Tu dois d'abord maîtriser les centaines !" });
+                    get().setFeedback("⚠️ Tu dois d'abord maîtriser les centaines !");
                     return;
                 }
                 newCols[nextIdx].unlocked = true;
@@ -1028,7 +1032,8 @@ export const useStore = create<MachineState>((set, get) => ({
                 }, FEEDBACK_DELAY);
             } else {
                 newCols[nextIdx].unlocked = true;
-                set({ columns: newCols, feedback: `🔓 Colonne ${newCols[nextIdx].name} débloquée ! Clique sur △ et ∇ pour t'amuser !` });
+                set({ columns: newCols });
+                get().setFeedback(`🔓 Colonne ${newCols[nextIdx].name} débloquée ! Clique sur △ et ∇ pour t'amuser !`);
             }
         }
     },
