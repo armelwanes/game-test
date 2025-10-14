@@ -514,6 +514,7 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback("Merveilleux ! 🎉 **Dis : TROIS !** Trois doigts !", `Clique sur △ pour continuer !`);
                 setTimeout(() => {
                     set({ phase: 'click-add', feedback: "Bravo ! Continuons jusqu'à 9 ! Clique sur △ !" });
+                    get().updateButtonVisibility();
                 }, FEEDBACK_DELAY * 1.5);
             } else if (unitsValue > 3) {
                 newCols[0].value = 3;
@@ -529,6 +530,7 @@ export const useStore = create<MachineState>((set, get) => ({
                 get().setFeedback("Parfait ! 🎉 Tu as atteint 9 ! Maintenant clique sur ∇ pour descendre à zéro !");
                 setTimeout(() => {
                     set({ phase: 'click-remove' });
+                    get().updateButtonVisibility();
                     get().setFeedback("Super ! Clique sur ∇ pour enlever les billes jusqu'à zéro !");
                 }, FEEDBACK_DELAY);
                 return;
@@ -545,6 +547,7 @@ export const useStore = create<MachineState>((set, get) => ({
                         phase: 'challenge-unit-1',
                         isTransitioningToChallenge: false
                     });
+                    get().updateButtonVisibility();
                     get().setFeedback(`🎯 DÉFI 1 : Affiche le nombre **${UNIT_CHALLENGES[0].targets[0]}** avec les boutons, puis clique sur VALIDER !`);
                 }, FEEDBACK_DELAY * 2);
                 return;
@@ -571,6 +574,7 @@ export const useStore = create<MachineState>((set, get) => ({
                     pendingAutoCount: true,
                     isCountingAutomatically: false
                 });
+                get().updateButtonVisibility();
                 sequenceFeedback("Bravo ! 🎉 Maintenant on va apprendre les DIZAINES !", "Observe comment la machine compte par dizaines : 10, 20, 30... !");
             }, FEEDBACK_DELAY * 2);
         } else if (phase === 'normal' && hasCarry) {
@@ -648,6 +652,7 @@ export const useStore = create<MachineState>((set, get) => ({
                         phase: 'learn-units',
                         pendingAutoCount: true
                     });
+                    get().updateButtonVisibility();
                     sequenceFeedback("Bienvenue dans le monde des NOMBRES ! ✨ Un nombre dit COMBIEN il y a de choses.", "Regarde ! 👀 La machine compte de 1 à 9. Compte avec tes doigts !");
                 }, FEEDBACK_DELAY * 2);
             } else if (unitsValue > 0) {
@@ -670,6 +675,7 @@ export const useStore = create<MachineState>((set, get) => ({
                         columns: newCols,
                         phase: 'challenge-unit-1'
                     });
+                    get().updateButtonVisibility();
                     get().setFeedback(`Bravo ! 🎉 Maintenant, DÉFI 1 : Affiche le nombre **${UNIT_CHALLENGES[0].targets[0]}** avec les boutons, puis clique sur VALIDER !`);
                 }, FEEDBACK_DELAY);
             } else if (unitsValue > 0) {
@@ -699,6 +705,7 @@ export const useStore = create<MachineState>((set, get) => ({
                     get().setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les unités !");
                     setTimeout(() => {
                         set({ phase: 'learn-carry' });
+                        get().updateButtonVisibility();
                         sequenceFeedback("Prêt pour la magie ? 🎩 Clique sur △ pour l'échange 10 pour 1 !", "Vas-y ! Clique sur △ pour voir la transformation !");
                     }, FEEDBACK_DELAY);
                 } else {
@@ -750,6 +757,7 @@ export const useStore = create<MachineState>((set, get) => ({
                     set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, tens: true } }));
                     setTimeout(() => {
                         set({ phase: 'normal' });
+                        get().updateButtonVisibility();
                         const newCols = [...get().columns];
                         if (!newCols[2].unlocked) {
                             newCols[2].unlocked = true;
@@ -768,6 +776,7 @@ export const useStore = create<MachineState>((set, get) => ({
                             phase: nextChallenge.phase,
                             columns: resetCols
                         });
+                        get().updateButtonVisibility();
                         get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
                     }, FEEDBACK_DELAY * 2);
                 }
@@ -802,6 +811,7 @@ export const useStore = create<MachineState>((set, get) => ({
                     set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, hundreds: true } }));
                     setTimeout(() => {
                         set({ phase: 'normal' });
+                        get().updateButtonVisibility();
                         const newCols = [...get().columns];
                         if (!newCols[3].unlocked) {
                             newCols[3].unlocked = true;
@@ -820,6 +830,7 @@ export const useStore = create<MachineState>((set, get) => ({
                             phase: nextChallenge.phase,
                             columns: resetCols
                         });
+                        get().updateButtonVisibility();
                         get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
                     }, FEEDBACK_DELAY * 2);
                 }
@@ -854,6 +865,7 @@ export const useStore = create<MachineState>((set, get) => ({
                     set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, thousands: true } }));
                     setTimeout(() => {
                         set({ phase: 'normal' });
+                        get().updateButtonVisibility();
                         sequenceFeedback("APPRENTISSAGE DES MILLIERS TERMINÉ ! Bravo ! 🎉 Tu es un expert des nombres !", "🏆 Tu peux maintenant créer n'importe quel nombre jusqu'à 9999 !", FEEDBACK_DELAY / 1.5);
                     }, FEEDBACK_DELAY * 2);
                 } else {
@@ -866,6 +878,7 @@ export const useStore = create<MachineState>((set, get) => ({
                             phase: nextChallenge.phase,
                             columns: resetCols
                         });
+                        get().updateButtonVisibility();
                         get().setFeedback(`🎯 DÉFI ${challengeIndex + 2} : Affiche le nombre **${nextChallenge.targets[0]}** !`);
                     }, FEEDBACK_DELAY * 2);
                 }
@@ -984,6 +997,7 @@ export const useStore = create<MachineState>((set, get) => ({
                 pendingAutoCount: true,
                 isCountingAutomatically: false
             });
+            get().updateButtonVisibility();
             sequenceFeedback("C'est parti ! 🎉 La machine va compter de 1 à 9 !", "Observe bien les billes ! Compte avec tes doigts !");
         }
     },
@@ -1011,6 +1025,7 @@ export const useStore = create<MachineState>((set, get) => ({
                         pendingAutoCount: true,
                         isCountingAutomatically: false
                     });
+                    get().updateButtonVisibility();
                     sequenceFeedback("NIVEAU DÉBLOQUÉ : Les CENTAINES ! 💯", "Regarde ! 👀 La machine va compter par centaines : 100, 200, 300... !");
                 }, FEEDBACK_DELAY);
             } else if (nextIdx === 3) {
@@ -1028,6 +1043,7 @@ export const useStore = create<MachineState>((set, get) => ({
                         pendingAutoCount: true,
                         isCountingAutomatically: false
                     });
+                    get().updateButtonVisibility();
                     sequenceFeedback("NIVEAU MAXIMUM : Les MILLIERS ! 🎉", "Regarde ! 👀 La machine va compter par milliers : 1000, 2000, 3000... !");
                 }, FEEDBACK_DELAY);
             } else {
