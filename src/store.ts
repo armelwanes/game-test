@@ -756,15 +756,20 @@ export const useStore = create<MachineState>((set, get) => ({
                     get().setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les dizaines !");
                     set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, tens: true } }));
                     setTimeout(() => {
-                        set({ phase: 'normal' });
-                        get().updateButtonVisibility();
                         const newCols = [...get().columns];
                         if (!newCols[2].unlocked) {
                             newCols[2].unlocked = true;
                             set({ columns: newCols });
-                            set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, hundreds: true } }));
                         }
-                        sequenceFeedback("APPRENTISSAGE DES DIZAINES TERMINÉ ! Bravo ! 🎉 Tu peux maintenant utiliser librement les nombres !", "🔓 Les CENTAINES sont débloquées ! Utilise le bouton pour débloquer les MILLIERS !", FEEDBACK_DELAY / 1.5);
+                        const resetCols = initialColumns.map((col, i) => (i === 1 || i === 2) ? { ...col, unlocked: true } : col);
+                        set({
+                            columns: resetCols,
+                            phase: 'learn-hundreds',
+                            pendingAutoCount: true,
+                            isCountingAutomatically: false
+                        });
+                        get().updateButtonVisibility();
+                        sequenceFeedback("APPRENTISSAGE DES DIZAINES TERMINÉ ! Bravo ! 🎉", "NIVEAU DÉBLOQUÉ : Les CENTAINES ! 💯 La machine va compter par centaines : 100, 200, 300... !");
                     }, FEEDBACK_DELAY * 2);
                 } else {
                     const nextChallenge = TENS_CHALLENGES[challengeIndex + 1];
@@ -810,15 +815,20 @@ export const useStore = create<MachineState>((set, get) => ({
                     get().setFeedback("🎉 TOUS LES DÉFIS RÉUSSIS ! Bravo ! Tu maîtrises les centaines !");
                     set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, hundreds: true } }));
                     setTimeout(() => {
-                        set({ phase: 'normal' });
-                        get().updateButtonVisibility();
                         const newCols = [...get().columns];
                         if (!newCols[3].unlocked) {
                             newCols[3].unlocked = true;
                             set({ columns: newCols });
-                            set((state: MachineState) => ({ completedChallenges: { ...state.completedChallenges, thousands: true } }));
                         }
-                        sequenceFeedback("APPRENTISSAGE DES CENTAINES TERMINÉ ! Bravo ! 🎉 Tu peux maintenant utiliser librement les nombres !", "🔓 Les MILLIERS sont débloquées ! Utilise le bouton pour explorer les milliers !", FEEDBACK_DELAY / 1.5);
+                        const resetCols = columns.map((col: Column) => ({ ...col, unlocked: true }));
+                        set({
+                            columns: resetCols,
+                            phase: 'learn-thousands',
+                            pendingAutoCount: true,
+                            isCountingAutomatically: false
+                        });
+                        get().updateButtonVisibility();
+                        sequenceFeedback("APPRENTISSAGE DES CENTAINES TERMINÉ ! Bravo ! 🎉", "NIVEAU MAXIMUM : Les MILLIERS ! 🎉 La machine va compter par milliers : 1000, 2000, 3000... !");
                     }, FEEDBACK_DELAY * 2);
                 } else {
                     const nextChallenge = HUNDREDS_CHALLENGES[challengeIndex + 1];
