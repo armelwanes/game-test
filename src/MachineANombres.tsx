@@ -18,6 +18,8 @@ function MachineANombres() {
     tensTargetIndex,
     hundredsTargetIndex,
     thousandsTargetIndex,
+    userInput,
+    showInputField,
     setPendingAutoCount,
     setIsCountingAutomatically,
     handleAdd,
@@ -35,6 +37,8 @@ function MachineANombres() {
     showValidateTensButton,
     showValidateHundredsButton,
     showValidateThousandsButton,
+    setUserInput,
+    handleUserInputSubmit,
   } = useStore();
 
   useEffect(() => {
@@ -133,7 +137,16 @@ function MachineANombres() {
             // Logique d'activation des boutons
             let isInteractive = false;
             if (col.unlocked) {
-              if (phase === 'normal') {
+              if (phase === 'intro-welcome' && isUnit) {
+                isInteractive = true;
+              }
+              else if (phase === 'intro-discover' && isUnit) {
+                isInteractive = true;
+              }
+              else if (phase === 'intro-add-roll' && isUnit) {
+                isInteractive = true;
+              }
+              else if (phase === 'normal') {
                 isInteractive = true;
               }
               else if ((phase === 'tutorial' || phase === 'explore-units' || phase === 'click-add' || phase === 'click-remove' || phase.startsWith('challenge-unit-')) && isUnit) {
@@ -458,6 +471,49 @@ function MachineANombres() {
                 🔓 Débloquer la colonne suivante
               </button>
             )}
+          </div>
+        )}
+
+        {/* Input field for questions */}
+        {showInputField && (
+          <div style={{ marginTop: 20, textAlign: 'center' }}>
+            <input
+              type="number"
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleUserInputSubmit();
+                }
+              }}
+              placeholder="Ta réponse..."
+              style={{
+                fontSize: 16,
+                padding: '8px 12px',
+                borderRadius: 6,
+                border: '2px solid #cbd5e1',
+                width: '120px',
+                textAlign: 'center',
+                marginRight: 8
+              }}
+            />
+            <button
+              onClick={handleUserInputSubmit}
+              style={{
+                fontSize: 16,
+                padding: '8px 20px',
+                background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 8px rgba(14, 165, 233, 0.3)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              ✓ Valider
+            </button>
           </div>
         )}
 

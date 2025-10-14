@@ -6,6 +6,11 @@ export type Column = {
 };
 
 export type Phase =
+    | 'intro-welcome'
+    | 'intro-discover'
+    | 'intro-question-digits'
+    | 'intro-add-roll'
+    | 'intro-question-max'
     | 'tutorial'
     | 'explore-units'
     | 'click-add'
@@ -92,6 +97,8 @@ export interface MachineState {
     thousandsSuccessCount: number;
     instruction: string;
     timer: number | null;
+    userInput: string;
+    showInputField: boolean;
 
     // Button visibility
     showUnlockButton: boolean;
@@ -130,6 +137,9 @@ export interface MachineState {
     updateInstruction: () => void;
     runAutoCount: () => void;
     updateButtonVisibility: () => void;
+    setUserInput: (input: string) => void;
+    setShowInputField: (show: boolean) => void;
+    handleUserInputSubmit: () => void;
 
     // Typing effect state and actions
     queue: Array<{ kind: 'instruction' | 'feedback'; text: string }>;

@@ -67,14 +67,15 @@ npm run lint
 
 L'application suit un parcours d'apprentissage progressif :
 
-0. **Phase Tutoriel** (tutorial) : Prise en main de l'interface (boutons VERT et ROUGE) sans concept de nombre
-1. **Phase Exploration** (explore-units) : Découverte de ZÉRO, UN, DEUX, TROIS
-2. **Phase Pratique** (click-add) : Entraînement jusqu'à SIX
-3. **Phase Soustraction** (click-remove) : Retour à ZÉRO
-4. **Phase Apprentissage** (learn-units) : Comptage automatique de 1 à 9
-5. **Phase Défi** (challenge-learn-unit) : Validation des acquis
-6. **Phase Échange** (learn-carry) : Découverte de l'échange 10 pour 1
-7. **Mode Libre** (normal) : Manipulation libre des nombres
+0. **Phase Introduction** (intro-welcome, intro-discover, intro-question-digits, intro-add-roll, intro-question-max) : Découverte interactive de la machine avec questions/réponses sur les concepts de base (10 chiffres, comptage jusqu'à 99)
+1. **Phase Tutoriel** (tutorial) : Prise en main de l'interface (boutons VERT et ROUGE) sans concept de nombre
+2. **Phase Exploration** (explore-units) : Découverte de ZÉRO, UN, DEUX, TROIS
+3. **Phase Pratique** (click-add) : Entraînement jusqu'à SIX
+4. **Phase Soustraction** (click-remove) : Retour à ZÉRO
+5. **Phase Apprentissage** (learn-units) : Comptage automatique de 1 à 9
+6. **Phase Défi** (challenge-learn-unit) : Validation des acquis
+7. **Phase Échange** (learn-carry) : Découverte de l'échange 10 pour 1
+8. **Mode Libre** (normal) : Manipulation libre des nombres
 
 ## 🛠️ Technologies Utilisées
 

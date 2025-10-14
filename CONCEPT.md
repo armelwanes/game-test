@@ -4,6 +4,61 @@
 
 ---
 
+## 🎬 Introduction — Découverte de la Machine !
+
+### 🎯 Mission :
+Faire connaissance avec la machine et comprendre les bases du système de comptage.
+
+### 🗣️ Dialogue d'introduction :
+
+> **(Bruits de marteau sur du métal et de perceuse)** Paf, Crac… Bim… Tchac ! Quel vacarme ! Voilà, j'ai terminé ma nouvelle machine !
+
+> **Moi :** "Oh, tu es là ? Je ne t'avais pas entendu arriver avec tout ce bruit ! J'étais justement en train de terminer la nouvelle invention qui va nous permettre de compter toutes sortes de choses."
+
+> **Moi :** "Tu es prêt à la découvrir ? Tadaaaaa ! Comment tu la trouves ?"
+
+> **Moi :** "Bon, elle peut paraître un peu compliquée comme ça, mais elle n'aura bientôt plus de secrets pour toi ! Grâce à cette machine bizarre, nous allons comprendre comment fonctionnent les nombres."
+
+> **Moi :** "Et hop, je vais la mettre en route pour que tu puisses appuyer sur ses boutons. Vas-y clique sur les boutons + et – pour voir ce qu'il se passe."
+
+> **Moi :** "Essaie d'afficher le chiffre le plus grand possible en cliquant sur △ !"
+
+> *L'enfant clique jusqu'à 9*
+
+> **Moi :** "Et voilà, on a rempli la machine. Tu as vu comme les lumières s'allument en même temps que les chiffres changent ?"
+
+### 💬 Question interactive :
+> **"Te rappelles-tu combien de chiffres différents tu as vu ?"**
+
+- **Si réponse = 9 :** "Ah je vois pourquoi tu pourrais penser ça, 1, 2, 3, 4, 5, 6, 7, 8, 9, ça fait 9 chiffres, mais rappelle-toi, au début la machine affichait aussi 0 ! Il est un peu particulier et parfois on l'oublie, mais ce 0 est aussi important que les autres chiffres !"
+
+- **Si réponse = 10 :** "Tu n'as pas oublié le 0 ! Bravo ! 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, le compte est bon, nous en avons bien 10 ! Il est un peu particulier et parfois on l'oublie, mais ce 0 est aussi important que les autres chiffres !"
+
+- **Autre réponse :** "J'imagine que tu n'y as pas vraiment fait attention, comptons ensemble : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, le compte est bon, nous en avons 10 ! Au début la machine affichait aussi 0 et ce 0 est aussi important que les autres chiffres."
+
+### 🎡 Ajout du deuxième rouleau :
+
+> **Moi :** "Bon, tout ça c'est très bien, mais comment va-t-on faire pour utiliser cette machine lorsque je veux compter plus haut que 9 ? Pour l'instant elle bloque !"
+
+> **Moi :** "Je sais, nous allons devoir la modifier pour qu'elle ait une place de plus. Rajoutons un rouleau !"
+
+> **Moi :** "Je vais l'allumer pour que tu puisses la tester."
+
+> *Animation : les lumières quittent leur diode qui reste éteinte et se regroupent pour aller allumer la première diode de la colonne suivante*
+
+> **Moi :** "Et voilà le travail ! Tu as vu comment les lumières ont voyagé ? Elles se regroupent pour n'allumer qu'une autre lumière du rouleau suivant. C'est un peu comme si chaque lumière du nouveau rouleau avait dix petites lumières à l'intérieur."
+
+### 💬 Deuxième question interactive :
+> **"Jusqu'à combien peut-on compter maintenant ?"**
+
+- **Si réponse = 100 :** "Malheureusement pas, j'ai bien l'impression qu'il va encore falloir modifier la machine si je veux y arriver. Regarde combien chaque rouleau peut afficher de points : 9 et 9, ce qui veut dire qu'on peut compter jusqu'à 99 !"
+
+- **Si réponse = 99 :** "Exactement ! Trop facile comme question !"
+
+- **Autre réponse :** "Pas tout à fait... Regarde combien chaque rouleau peut afficher de points : 9 et 9, ce qui veut dire qu'on peut compter jusqu'à 99 !"
+
+---
+
 ## 🚀 Prêt(e) pour le décollage ! (Tutoriel rapide)
 
 Regarde bien la machine, elle a quatre grandes maisons :
@@ -135,6 +190,7 @@ La machine à nombres est ton terrain de jeu pour comprendre comment les chiffre
 
 Cette documentation conceptuelle correspond aux phases d'apprentissage implémentées dans l'application :
 
+- **Introduction** → Phases `intro-welcome`, `intro-discover`, `intro-question-digits`, `intro-add-roll`, `intro-question-max` : Découverte de la machine et des concepts de base
 - **Étape 1** → Phase `tutorial` : Découverte des boutons
 - **Étape 2** → Phases `explore-units`, `click-add`, `click-remove` : Apprentissage des unités
 - **Étape 3** → Phase `learn-carry` : Découverte de l'échange 10 pour 1 et déblocage des dizaines

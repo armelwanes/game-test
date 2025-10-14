@@ -20,7 +20,7 @@ export const initialColumns: Column[] = [
 
 export const useStore = create<MachineState>((set, get) => ({
     columns: initialColumns,
-    phase: 'tutorial',
+    phase: 'intro-welcome',
     addClicks: 0,
     feedback: "",
     typedInstruction: "",
@@ -45,7 +45,9 @@ export const useStore = create<MachineState>((set, get) => ({
     hundredsSuccessCount: 0,
     thousandsTargetIndex: 0,
     thousandsSuccessCount: 0,
-    instruction: "Bienvenue ! Clique sur △ pour découvrir la machine !",
+    instruction: "(Bruits de marteau sur du métal et de perceuse) Paf, Crac… Bim… Tchac ! Quel vacarme ! Voilà, j'ai terminé ma nouvelle machine !",
+    userInput: "",
+    showInputField: false,
 
     // Button visibility
     showUnlockButton: false,
@@ -129,6 +131,79 @@ export const useStore = create<MachineState>((set, get) => ({
     resetThousandsChallenge: () => {
         set({ thousandsTargetIndex: 0, thousandsSuccessCount: 0 });
         get().updateInstruction();
+    },
+    setUserInput: (input) => set({ userInput: input }),
+    setShowInputField: (show) => set({ showInputField: show }),
+    
+    handleUserInputSubmit: () => {
+        const { phase, userInput, sequenceFeedback } = get();
+        const answer = parseInt(userInput.trim());
+        
+        if (phase === 'intro-question-digits') {
+            if (answer === 9) {
+                sequenceFeedback(
+                    "Ah je vois pourquoi tu pourrais penser ça, 1, 2, 3, 4, 5, 6, 7, 8, 9, ça fait 9 chiffres...",
+                    "Mais rappelle-toi, au début la machine affichait aussi 0 ! Il est un peu particulier et parfois on l'oublie, mais ce 0 est aussi important que les autres chiffres !"
+                );
+                setTimeout(() => {
+                    get().setFeedback("Donc en tout, nous avons bien 10 chiffres différents : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 !");
+                    setTimeout(() => {
+                        set({ showInputField: false, userInput: "", phase: 'intro-add-roll' });
+                        get().updateInstruction();
+                    }, FEEDBACK_DELAY);
+                }, FEEDBACK_DELAY * 2);
+            } else if (answer === 10) {
+                sequenceFeedback(
+                    "Tu n'as pas oublié le 0 ! Bravo !",
+                    "0, 1, 2, 3, 4, 5, 6, 7, 8, 9, le compte est bon, nous en avons bien 10 ! Il est un peu particulier et parfois on l'oublie, mais ce 0 est aussi important que les autres chiffres !"
+                );
+                setTimeout(() => {
+                    set({ showInputField: false, userInput: "", phase: 'intro-add-roll' });
+                    get().updateInstruction();
+                }, FEEDBACK_DELAY * 2);
+            } else {
+                sequenceFeedback(
+                    "J'imagine que tu n'y as pas vraiment fait attention, comptons ensemble...",
+                    "0, 1, 2, 3, 4, 5, 6, 7, 8, 9, le compte est bon, nous en avons 10 ! Au début la machine affichait aussi 0 et ce 0 est aussi important que les autres chiffres."
+                );
+                setTimeout(() => {
+                    set({ showInputField: false, userInput: "", phase: 'intro-add-roll' });
+                    get().updateInstruction();
+                }, FEEDBACK_DELAY * 2);
+            }
+        } else if (phase === 'intro-question-max') {
+            if (answer === 100) {
+                sequenceFeedback(
+                    "Malheureusement pas...",
+                    "J'ai bien l'impression qu'il va encore falloir modifier la machine si je veux y arriver !"
+                );
+                setTimeout(() => {
+                    get().setFeedback("Regarde combien chaque rouleau peut afficher de points : 9 et 9, ce qui veut dire qu'on peut compter jusqu'à 99 !");
+                    setTimeout(() => {
+                        set({ showInputField: false, userInput: "", phase: 'tutorial' });
+                        get().updateInstruction();
+                    }, FEEDBACK_DELAY);
+                }, FEEDBACK_DELAY * 2);
+            } else if (answer === 99) {
+                sequenceFeedback(
+                    "Exactement ! Trop facile comme question !",
+                    "Avec deux rouleaux, on peut afficher jusqu'à 99 !"
+                );
+                setTimeout(() => {
+                    set({ showInputField: false, userInput: "", phase: 'tutorial' });
+                    get().updateInstruction();
+                }, FEEDBACK_DELAY * 2);
+            } else {
+                sequenceFeedback(
+                    "Pas tout à fait...",
+                    "Regarde combien chaque rouleau peut afficher de points : 9 et 9, ce qui veut dire qu'on peut compter jusqu'à 99 !"
+                );
+                setTimeout(() => {
+                    set({ showInputField: false, userInput: "", phase: 'tutorial' });
+                    get().updateInstruction();
+                }, FEEDBACK_DELAY * 2);
+            }
+        }
     },
 
     updateButtonVisibility: () => {
@@ -453,20 +528,59 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleAdd: (idx: number) => {
-        const { isCountingAutomatically, isTransitioningToChallenge, phase, columns, addClicks } = get();
+        const { isCountingAutomatically, isTransitioningToChallenge, phase, columns, addClicks, sequenceFeedback } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
 
         if (isCountingAutomatically || isTransitioningToChallenge) return;
 
         const isUnitsColumn = (i: number) => i === 0;
 
+        // Handle intro phases
+        if (phase === 'intro-welcome') {
+            sequenceFeedback(
+                "Oh, tu es là ? Je ne t'avais pas entendu arriver avec tout ce bruit !",
+                "J'étais justement en train de terminer la nouvelle invention qui va nous permettre de compter toutes sortes de choses."
+            );
+            setTimeout(() => {
+                sequenceFeedback(
+                    "Tu es prêt à la découvrir ?",
+                    "Tadaaaaa ! Comment tu la trouves ?"
+                );
+                setTimeout(() => {
+                    set({ phase: 'intro-discover' });
+                    get().updateInstruction();
+                }, FEEDBACK_DELAY * 2);
+            }, FEEDBACK_DELAY * 2);
+            return;
+        } else if (phase === 'intro-discover') {
+            sequenceFeedback(
+                "Bon, elle peut paraître un peu compliquée comme ça, mais elle n'aura bientôt plus de secrets pour toi !",
+                "Grâce à cette machine bizarre, nous allons comprendre comment fonctionnent les nombres."
+            );
+            setTimeout(() => {
+                sequenceFeedback(
+                    "Et hop, je vais la mettre en route pour que tu puisses appuyer sur ses boutons.",
+                    "Vas-y clique sur les boutons + et – pour voir ce qu'il se passe."
+                );
+                setTimeout(() => {
+                    const newCols = [...columns];
+                    newCols[0].value = 0;
+                    set({ columns: newCols });
+                    get().setFeedback("Essaie d'afficher le chiffre le plus grand possible en cliquant sur △ !");
+                }, FEEDBACK_DELAY * 2);
+            }, FEEDBACK_DELAY * 2);
+            return;
+        }
+
+        const currentPhaseForCheck = get().phase;
         const isAllowedColumn = () => {
-            if (phase === 'normal') return true;
+            if (currentPhaseForCheck === 'intro-discover' || currentPhaseForCheck === 'intro-add-roll') return isUnitsColumn(idx);
+            if (currentPhaseForCheck === 'normal') return true;
             if (isUnitsColumn(idx)) return true;
-            if (idx === 1 && (phase.startsWith('challenge-tens-') || phase === 'learn-tens-combination')) return true;
-            if ((idx === 1 || idx === 2) && (phase.startsWith('challenge-hundreds-') || phase === 'learn-hundreds-combination')) return true;
-            if ((idx === 1 || idx === 2 || idx === 3) && (phase.startsWith('challenge-thousands-') || phase === 'learn-thousands-combination')) return true;
-            if (phase === 'learn-carry') return isUnitsColumn(idx);
+            if (idx === 1 && (currentPhaseForCheck.startsWith('challenge-tens-') || currentPhaseForCheck === 'learn-tens-combination')) return true;
+            if ((idx === 1 || idx === 2) && (currentPhaseForCheck.startsWith('challenge-hundreds-') || currentPhaseForCheck === 'learn-hundreds-combination')) return true;
+            if ((idx === 1 || idx === 2 || idx === 3) && (currentPhaseForCheck.startsWith('challenge-thousands-') || currentPhaseForCheck === 'learn-thousands-combination')) return true;
+            if (currentPhaseForCheck === 'learn-carry') return isUnitsColumn(idx);
             return false;
         };
 
@@ -493,9 +607,49 @@ export const useStore = create<MachineState>((set, get) => ({
 
         set({ columns: newCols });
 
-        const { sequenceFeedback, resetUnitChallenge } = get();
+        const { resetUnitChallenge } = get();
+        const currentPhase = get().phase;
 
-        if (phase === 'tutorial') {
+        if (currentPhase === 'intro-discover' && isUnitsColumn(idx)) {
+            const unitsValue = newCols[0].value;
+            if (unitsValue === 9) {
+                sequenceFeedback(
+                    "Et voilà, on a rempli la machine !",
+                    "Tu as vu comme les lumières s'allument en même temps que les chiffres changent ?"
+                );
+                setTimeout(() => {
+                    set({ showInputField: true, phase: 'intro-question-digits' });
+                    get().updateInstruction();
+                }, FEEDBACK_DELAY * 2);
+            } else if (unitsValue > 0) {
+                get().setFeedback(`${unitsValue}... Continue à cliquer sur △ !`);
+            }
+        } else if (currentPhase === 'intro-add-roll') {
+            const unitsValue = newCols[0].value;
+            if (unitsValue === 9) {
+                sequenceFeedback(
+                    "Je sais, nous allons devoir la modifier pour qu'elle ait une place de plus. Rajoutons un rouleau !",
+                    "Je vais l'allumer pour que tu puisses la tester."
+                );
+                setTimeout(() => {
+                    // Unlock the tens column
+                    const updatedCols = [...newCols];
+                    updatedCols[1].unlocked = true;
+                    updatedCols[0].value = 0;
+                    set({ columns: updatedCols });
+                    sequenceFeedback(
+                        "Et voilà le travail ! Tu as vu comment les lumières ont voyagé ?",
+                        "Elles se regroupent pour n'allumer qu'une autre lumière du rouleau suivant. C'est un peu comme si chaque lumière du nouveau rouleau avait dix petites lumières à l'intérieur."
+                    );
+                    setTimeout(() => {
+                        set({ showInputField: true, phase: 'intro-question-max' });
+                        get().updateInstruction();
+                    }, FEEDBACK_DELAY * 2);
+                }, FEEDBACK_DELAY * 2);
+            } else if (unitsValue > 0) {
+                get().setFeedback(`${unitsValue}... Continue à cliquer sur △ jusqu'à 9 !`);
+            }
+        } else if (currentPhase === 'tutorial') {
             const unitsValue = newCols[0].value;
             if (unitsValue === 1) sequenceFeedback("Bravo ! 🎉 Tu as cliqué sur le bouton VERT ! Un joli rond bleu est apparu !", "Ce rond bleu, c'est comme une bille. Clique encore sur △ pour en ajouter !");
             else if (unitsValue === 2) sequenceFeedback("Super ! 🎉 Maintenant il y a DEUX ronds bleus !", "Deux belles billes ! Continue à cliquer sur △ !");
@@ -908,6 +1062,21 @@ export const useStore = create<MachineState>((set, get) => ({
         let newInstruction = "";
         switch (phase) {
             // ... (cases from your existing updateInstruction)
+            case 'intro-welcome':
+                newInstruction = "(Bruits de marteau sur du métal et de perceuse) Paf, Crac… Bim… Tchac ! Quel vacarme ! Voilà, j'ai terminé ma nouvelle machine !";
+                break;
+            case 'intro-discover':
+                newInstruction = "Oh, tu es là ? Je ne t'avais pas entendu arriver avec tout ce bruit ! J'étais justement en train de terminer la nouvelle invention qui va nous permettre de compter toutes sortes de choses.";
+                break;
+            case 'intro-question-digits':
+                newInstruction = "Te rappelles-tu combien de chiffres différents tu as vu ? (Saisis ta réponse)";
+                break;
+            case 'intro-add-roll':
+                newInstruction = "Bon, tout ça c'est très bien, mais comment va-t-on faire pour utiliser cette machine lorsque je veux compter plus haut que 9 ? Pour l'instant elle bloque !";
+                break;
+            case 'intro-question-max':
+                newInstruction = "Jusqu'à combien peut-on compter maintenant ? (Saisis ta réponse)";
+                break;
             case 'tutorial':
                 newInstruction = "Bienvenue ! Clique sur △ pour découvrir la machine !";
                 break;
