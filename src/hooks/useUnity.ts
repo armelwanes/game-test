@@ -2,11 +2,11 @@ import { useUnityContext } from 'react-unity-webgl';
 
 export function useUnity() {
   const unityContext = useUnityContext({
-    loaderUrl: '/counting-machine/Build/counting-machine.loader.js',
-    dataUrl: '/counting-machine/Build/counting-machine.data.br',
-    frameworkUrl: '/counting-machine/Build/counting-machine.framework.js.br',
-    codeUrl: '/counting-machine/Build/counting-machine.wasm.br',
-    streamingAssetsUrl: '/counting-machine/StreamingAssets',
+    loaderUrl: './counting-machine/Build/counting-machine.loader.js',
+    dataUrl: './counting-machine/Build/counting-machine.data.br',
+    frameworkUrl: './counting-machine/Build/counting-machine.framework.js.br',
+    codeUrl: './counting-machine/Build/counting-machine.wasm.br',
+    streamingAssetsUrl: './counting-machine/StreamingAssets',
     companyName: 'Mena Mena Games',
     productName: 'Counting Machine',
     productVersion: '0.0.5',
