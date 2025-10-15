@@ -23,10 +23,7 @@ export const useStore = create<MachineState>((set, get) => ({
     phase: 'normal',
     addClicks: 0,
     feedback: "",
-    typedInstruction: "",
-    typedFeedback: "",
-    isTypingInstruction: false,
-    isTypingFeedback: false,
+    instruction: "",
     pendingAutoCount: false,
     isTransitioningToChallenge: false,
     isCountingAutomatically: false,
@@ -45,7 +42,6 @@ export const useStore = create<MachineState>((set, get) => ({
     hundredsSuccessCount: 0,
     thousandsTargetIndex: 0,
     thousandsSuccessCount: 0,
-    instruction: "",
     userInput: "",
     showInputField: false,
 
@@ -90,16 +86,8 @@ export const useStore = create<MachineState>((set, get) => ({
         get().updateInstruction();
     },
     setAddClicks: (clicks) => set({ addClicks: clicks }),
-    setFeedback: (feedback) => {
-        if (feedback) {
-            get().enqueueMessage({ kind: 'feedback', text: feedback });
-        }
-        set({ feedback });
-    },
-    setTypedInstruction: (instruction) => set({ typedInstruction: instruction }),
-    setTypedFeedback: (feedback) => set({ typedFeedback: feedback }),
-    setIsTypingInstruction: (isTyping) => set({ isTypingInstruction: isTyping }),
-    setIsTypingFeedback: (isTyping) => set({ isTypingFeedback: isTyping }),
+    setFeedback: (feedback) => set({ feedback }),
+    setInstruction: (instruction) => set({ instruction }),
     setPendingAutoCount: (pending) => set({ pendingAutoCount: pending }),
     setIsTransitioningToChallenge: (isTransitioning) => set({ isTransitioningToChallenge: isTransitioning }),
     setIsCountingAutomatically: (isCounting) => set({ isCountingAutomatically: isCounting }),
@@ -1126,9 +1114,8 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     updateInstruction: () => {
-        const { phase, unitTargetIndex, unitSuccessCount, tensTargetIndex, tensSuccessCount, hundredsTargetIndex, hundredsSuccessCount, thousandsTargetIndex, thousandsSuccessCount, instruction: oldInstruction, enqueueMessage } = get();
+        const { phase, unitTargetIndex, unitSuccessCount, tensTargetIndex, tensSuccessCount, hundredsTargetIndex, hundredsSuccessCount, thousandsTargetIndex, thousandsSuccessCount } = get();
         console.log('phase', phase);
-        // Si on est déjà en train de traiter une queue de messages, ne pas ajouter de nouveaux messages
 
         let newInstruction = "";
 
@@ -1231,18 +1218,8 @@ export const useStore = create<MachineState>((set, get) => ({
                 newInstruction = "Prépare-toi pour l'aventure des nombres !";
         }
 
-        const currentQueue = get().queue;
-        // Vérifier si le dernier message en file correspond déjà à newInstruction
-        if (currentQueue.length > 0 &&
-            currentQueue[currentQueue.length - 1].kind === 'instruction' &&
-            currentQueue[currentQueue.length - 1].text === newInstruction) {
-            return;
-        }
         console.log('newInstruction', newInstruction);
-
         set({ instruction: newInstruction });
-        enqueueMessage({ kind: 'instruction', text: newInstruction });
-
     },
 
     startLearningPhase: () => {
@@ -1314,78 +1291,30 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     init: () => {
-        const { instruction, enqueueMessage } = get();
-        if (instruction) {
-            enqueueMessage({ kind: 'instruction', text: instruction });
-        }
-    },
-
-    // Typing effect state and actions
-    queue: [],
-    isProcessingQueue: false,
-
-    enqueueMessage: (message) => {
-        set((state) => {
-            if (state.queue.length > 0) {
-                const last = state.queue[state.queue.length - 1];
-                if (last.kind === message.kind && last.text === message.text) {
-                    return {};
-                }
-            }
-            return { queue: [...state.queue, message] };
-        });
-        get().processQueue();
-    },
-
-    _setIsProcessingQueue: (isProcessing) => {
-        set({ isProcessingQueue: isProcessing });
-    },
-
-    processQueue: async () => {
-        const { isProcessingQueue, _setIsProcessingQueue, setTypedInstruction, setTypedFeedback, setIsTypingInstruction, setIsTypingFeedback } = get();
-
-        if (isProcessingQueue) return;
-        _setIsProcessingQueue(true);
-
-        const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
-
-        while (get().queue.length > 0) {
-            const queue = get().queue;
-
-            const item = queue.shift()!;
-            set({ queue }); // Update queue after shifting
-
-            setTypedInstruction("");
-            setTypedFeedback("");
-
-            if (item.kind === 'instruction') {
-                setIsTypingInstruction(true);
-                for (let i = 1; i <= item.text.length; i++) {
-                    setTypedInstruction(item.text.slice(0, i));
-                    await sleep(18); // TYPING_SPEED
-                }
-                setIsTypingInstruction(false);
-            } else { // feedback
-                const prefixed = ` ${item.text}`;
-                setIsTypingFeedback(true);
-                for (let i = 1; i <= prefixed.length; i++) {
-                    setTypedFeedback(prefixed.slice(0, i));
-                    await sleep(18); // TYPING_SPEED
-                }
-                setIsTypingFeedback(false);
-            }
-
-            if (get().queue.length > 0) {
-                await sleep(3000); // MESSAGE_READ_DELAY
-            }
-        }
-
-        _setIsProcessingQueue(false);
+        get().updateInstruction();
     },
 }));
 
+// Subscriber for automatic phase transitions
 useStore.subscribe(
     (state, previousState) => {
-       console.log('State changed:', state, previousState);
+        // Automatically trigger auto-counting when conditions are met
+        if (
+            state.phase.startsWith('learn-') &&
+            state.pendingAutoCount &&
+            !state.isCountingAutomatically &&
+            // Only trigger when pendingAutoCount changed to true or phase changed
+            (state.pendingAutoCount !== previousState.pendingAutoCount || state.phase !== previousState.phase)
+        ) {
+            // Use a small delay to ensure state updates are processed
+            setTimeout(() => {
+                const currentState = useStore.getState();
+                if (currentState.pendingAutoCount && !currentState.isCountingAutomatically) {
+                    currentState.setIsCountingAutomatically(true);
+                    currentState.setPendingAutoCount(false);
+                    currentState.runAutoCount();
+                }
+            }, 100);
+        }
     }
 );
