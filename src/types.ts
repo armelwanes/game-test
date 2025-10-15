@@ -74,10 +74,7 @@ export interface MachineState {
     phase: Phase;
     addClicks: number;
     feedback: string;
-    typedInstruction: string;
-    typedFeedback: string;
-    isTypingInstruction: boolean;
-    isTypingFeedback: boolean;
+    instruction: string;
     pendingAutoCount: boolean;
     isTransitioningToChallenge: boolean;
     isCountingAutomatically: boolean;
@@ -95,7 +92,6 @@ export interface MachineState {
     hundredsSuccessCount: number;
     thousandsTargetIndex: number;
     thousandsSuccessCount: number;
-    instruction: string;
     timer: number | null;
 
   userInput: string;
@@ -117,10 +113,7 @@ export interface MachineState {
     setPhase: (phase: Phase) => void;
     setAddClicks: (clicks: number) => void;
     setFeedback: (feedback: string) => void;
-    setTypedInstruction: (instruction: string) => void;
-    setTypedFeedback: (feedback: string) => void;
-    setIsTypingInstruction: (isTyping: boolean) => void;
-    setIsTypingFeedback: (isTyping: boolean) => void;
+    setInstruction: (instruction: string) => void;
     setPendingAutoCount: (pending: boolean) => void;
     setIsTransitioningToChallenge: (isTransitioning: boolean) => void;
     setIsCountingAutomatically: (isCounting: boolean) => void;
@@ -144,13 +137,6 @@ export interface MachineState {
     setUserInput: (input: string) => void;
     setShowInputField: (show: boolean) => void;
     handleUserInputSubmit: () => void;
-
-    // Typing effect state and actions
-    queue: Array<{ kind: 'instruction' | 'feedback'; text: string }>;
-    isProcessingQueue: boolean;
-    enqueueMessage: (message: { kind: 'instruction' | 'feedback'; text: string }) => void;
-    processQueue: () => Promise<void>;
-    _setIsProcessingQueue: (isProcessing: boolean) => void;
 
     // Business logic
     sequenceFeedback: (first: string, second: string, delay?: number) => void;

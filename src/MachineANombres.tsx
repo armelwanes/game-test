@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useStore } from './store.ts';
 import { UNIT_CHALLENGES, TENS_CHALLENGES, HUNDREDS_CHALLENGES, THOUSANDS_CHALLENGES } from './types.ts';
 
@@ -8,11 +8,8 @@ function MachineANombres() {
     init,
     columns,
     phase,
-    typedInstruction,
-    typedFeedback,
-    isTypingInstruction,
-    isTypingFeedback,
-    pendingAutoCount,
+    instruction,
+    feedback,
     isCountingAutomatically,
     unitTargetIndex,
     tensTargetIndex,
@@ -20,8 +17,6 @@ function MachineANombres() {
     thousandsTargetIndex,
     userInput,
     showInputField,
-    setPendingAutoCount,
-    setIsCountingAutomatically,
     handleAdd,
     handleSubtract,
     handleValidateLearning,
@@ -30,7 +25,6 @@ function MachineANombres() {
     handleValidateThousands,
     startLearningPhase,
     unlockNextColumn,
-    runAutoCount,
     showUnlockButton,
     showStartLearningButton,
     showValidateLearningButton,
@@ -40,6 +34,13 @@ function MachineANombres() {
     setUserInput,
     handleUserInputSubmit,
   } = useStore();
+
+  // Local typing animation state
+  const [typedInstruction, setTypedInstruction] = useState("");
+  const [typedFeedback, setTypedFeedback] = useState("");
+  const [isTypingInstruction, setIsTypingInstruction] = useState(false);
+  const [isTypingFeedback, setIsTypingFeedback] = useState(false);
+  const typingTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     init();
@@ -52,26 +53,65 @@ function MachineANombres() {
 
   const isUnitsColumn = useCallback((idx: number) => idx === 0, []);
 
+  // Typing animation effect for instruction
+  useEffect(() => {
+    if (!instruction) return;
+    
+    setIsTypingInstruction(true);
+    setTypedInstruction("");
+    setTypedFeedback("");
+    
+    let currentIndex = 0;
+    const typeNextChar = () => {
+      if (currentIndex <= instruction.length) {
+        setTypedInstruction(instruction.slice(0, currentIndex));
+        currentIndex++;
+        typingTimeoutRef.current = setTimeout(typeNextChar, 18);
+      } else {
+        setIsTypingInstruction(false);
+      }
+    };
+    
+    typeNextChar();
+    
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [instruction]);
+
+  // Typing animation effect for feedback
+  useEffect(() => {
+    if (!feedback) return;
+    
+    setIsTypingFeedback(true);
+    setTypedFeedback("");
+    
+    const prefixed = ` ${feedback}`;
+    let currentIndex = 0;
+    const typeNextChar = () => {
+      if (currentIndex <= prefixed.length) {
+        setTypedFeedback(prefixed.slice(0, currentIndex));
+        currentIndex++;
+        typingTimeoutRef.current = setTimeout(typeNextChar, 18);
+      } else {
+        setIsTypingFeedback(false);
+      }
+    };
+    
+    typeNextChar();
+    
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [feedback]);
+
   const displayText = useMemo(() => typedFeedback || typedInstruction, [typedInstruction, typedFeedback]);
 
   const isTyping = isTypingInstruction || isTypingFeedback;
-
-  // --- Démarrage du compteur auto après le texte d'observation ---
-  useEffect(() => {
-    // On veut démarrer le comptage auto uniquement après les phases d'apprentissage,
-    // lorsque toutes les animations de texte sont terminées
-    if (
-      (phase.startsWith('learn-')) &&
-      pendingAutoCount &&
-      !isCountingAutomatically &&
-      !isTypingInstruction &&
-      !isTypingFeedback
-    ) {
-      setIsCountingAutomatically(true);
-      setPendingAutoCount(false);
-      runAutoCount();
-    }
-  }, [phase, pendingAutoCount, isCountingAutomatically, isTypingInstruction, isTypingFeedback, setIsCountingAutomatically, setPendingAutoCount, runAutoCount]);
 
   // --- Rendu des jetons visuels ---
   const renderTokens = useCallback((value: number) => (
