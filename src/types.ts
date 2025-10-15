@@ -7,36 +7,63 @@ export type Column = {
 
 export type Phase =
     | 'intro-welcome'
+    | 'intro-welcome-ready'
     | 'intro-discover'
+    | 'intro-discover-ready'
     | 'intro-question-digits'
     | 'intro-add-roll'
+    | 'intro-add-roll-ready'
     | 'intro-question-max'
     | 'tutorial'
+    | 'tutorial-ready'
     | 'explore-units'
+    | 'explore-units-ready'
     | 'click-add'
+    | 'click-add-ready'
     | 'click-remove'
+    | 'click-remove-ready'
     | 'challenge-unit-1'
+    | 'challenge-unit-1-ready'
     | 'challenge-unit-2'
+    | 'challenge-unit-2-ready'
     | 'challenge-unit-3'
+    | 'challenge-unit-3-ready'
     | 'learn-carry'
+    | 'learn-carry-ready'
+    | 'learn-units'
+    | 'learn-units-ready'
     | 'learn-tens'
+    | 'learn-tens-ready'
     | 'learn-tens-combination'
+    | 'learn-tens-combination-ready'
     | 'challenge-tens-1'
+    | 'challenge-tens-1-ready'
     | 'challenge-tens-2'
+    | 'challenge-tens-2-ready'
     | 'challenge-tens-3'
+    | 'challenge-tens-3-ready'
     | 'learn-hundreds'
+    | 'learn-hundreds-ready'
     | 'learn-hundreds-combination'
+    | 'learn-hundreds-combination-ready'
     | 'challenge-hundreds-1'
+    | 'challenge-hundreds-1-ready'
     | 'challenge-hundreds-2'
+    | 'challenge-hundreds-2-ready'
     | 'challenge-hundreds-3'
+    | 'challenge-hundreds-3-ready'
     | 'learn-thousands'
+    | 'learn-thousands-ready'
     | 'learn-thousands-combination'
+    | 'learn-thousands-combination-ready'
     | 'challenge-thousands-1'
+    | 'challenge-thousands-1-ready'
     | 'challenge-thousands-2'
+    | 'challenge-thousands-2-ready'
     | 'challenge-thousands-3'
+    | 'challenge-thousands-3-ready'
     | 'normal'
-    | 'done'
-    | 'learn-units';
+    | 'done';
 
 export type Challenge = {
     phase: Phase;
@@ -107,6 +134,7 @@ export interface MachineState {
     showValidateTensButton: boolean;
     showValidateHundredsButton: boolean;
     showValidateThousandsButton: boolean;
+    showContinueButton: boolean;
 
     // Actions
     setColumns: (updater: ((columns: Column[]) => Column[]) | Column[]) => void;
@@ -159,4 +187,5 @@ export interface MachineState {
     startLearningPhase: () => void;
     unlockNextColumn: () => void;
     init: () => void;
+    handleContinue: () => void;
 }

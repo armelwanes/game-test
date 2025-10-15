@@ -37,8 +37,10 @@ function MachineANombres() {
     showValidateTensButton,
     showValidateHundredsButton,
     showValidateThousandsButton,
+    showContinueButton,
     setUserInput,
     handleUserInputSubmit,
+    handleContinue,
   } = useStore();
 
   useEffect(() => {
@@ -411,8 +413,8 @@ function MachineANombres() {
           );
         })()}
 
-        {/* Boutons de phase (Débloquer / Commencer) */}
-        {(showUnlockButton || showStartLearningButton) && (
+        {/* Boutons de phase (Débloquer / Commencer / Continuer) */}
+        {(showUnlockButton || showStartLearningButton || showContinueButton) && (
           <div style={{ marginTop: 16, textAlign: 'center' }}>
             {showStartLearningButton && (
               <button
@@ -442,6 +444,34 @@ function MachineANombres() {
                  Commencer l'apprentissage
               </button>
             )}
+            {showContinueButton && (
+              <button
+                onClick={handleContinue}
+                style={{
+                  fontSize: 16,
+                  padding: '10px 30px',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  boxShadow: '0 4px 8px rgba(16, 185, 129, 0.3)',
+                  transition: 'all 0.2s ease',
+                  animation: 'pulse 2s ease-in-out infinite'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 12px rgba(16, 185, 129, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.3)';
+                }}
+              >
+                ▶️ Continuer
+              </button>
+            )}
             {showUnlockButton && (
               <button
                 onClick={unlockNextColumn}
@@ -455,7 +485,7 @@ function MachineANombres() {
                   cursor: 'pointer',
                   fontWeight: 'bold',
                   transition: 'all 0.2s ease',
-                  marginLeft: showStartLearningButton ? '12px' : '0',
+                  marginLeft: (showStartLearningButton || showContinueButton) ? '12px' : '0',
                   boxShadow: '0 4px 8px rgba(139, 92, 246, 0.3)',
                   animation: 'pulse 2s ease-in-out infinite'
                 }}
