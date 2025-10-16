@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useStore } from './store.ts';
-import { UNIT_CHALLENGES, TEN_TO_TWENTY_CHALLENGES, TENS_CHALLENGES, HUNDREDS_CHALLENGES, THOUSANDS_CHALLENGES } from './types.ts';
+import { UNIT_CHALLENGES, TEN_TO_TWENTY_CHALLENGES, TENS_CHALLENGES, HUNDRED_TO_TWO_HUNDRED_CHALLENGES, TWO_HUNDRED_TO_THREE_HUNDRED_CHALLENGES, HUNDREDS_CHALLENGES, THOUSANDS_CHALLENGES } from './types.ts';
 
 
 function MachineANombres() {
@@ -23,8 +23,12 @@ function MachineANombres() {
     handleValidateLearning,
     handleValidateTenToTwenty,
     handleValidateTens,
+    handleValidateHundredToTwoHundred,
+    handleValidateTwoHundredToThreeHundred,
     handleValidateHundreds,
     handleValidateThousands,
+    hundredToTwoHundredTargetIndex,
+    twoHundredToThreeHundredTargetIndex,
     startLearningPhase,
     unlockNextColumn,
     showUnlockButton,
@@ -197,10 +201,13 @@ function MachineANombres() {
               else if ((phase === 'learn-carry' || phase === 'practice-ten' || phase === 'learn-ten-to-twenty' || phase === 'learn-twenty-to-thirty') && isUnit) {
                 isInteractive = true;
               }
+              else if ((phase === 'practice-hundred' || phase === 'learn-hundred-to-hundred-ten' || phase === 'learn-hundred-ten-to-two-hundred' || phase === 'challenge-hundred-to-two-hundred' || phase === 'learn-two-hundred-to-three-hundred' || phase === 'challenge-two-hundred-to-three-hundred') && isUnit) {
+                isInteractive = true;
+              }
               else if ((phase.startsWith('challenge-tens-') || phase === 'learn-tens-combination') && (isUnit || originalIdx === 1)) {
                 isInteractive = true;
               }
-              else if ((phase.startsWith('challenge-hundreds-') || phase === 'learn-hundreds-combination') && (isUnit || originalIdx === 1 || originalIdx === 2)) {
+              else if ((phase.startsWith('challenge-hundreds-') || phase === 'learn-hundreds-combination' || phase === 'learn-hundreds-simple-combination') && (isUnit || originalIdx === 1 || originalIdx === 2)) {
                 isInteractive = true;
               }
               else if ((phase.startsWith('challenge-thousands-') || phase === 'learn-thousands-combination') && (isUnit || originalIdx === 1 || originalIdx === 2 || originalIdx === 3)) {
@@ -414,6 +421,85 @@ function MachineANombres() {
 
         {/* BOUTON VALIDER (Défis des centaines) */}
         {showValidateHundredsButton && (() => {
+          // Handle new hundreds challenge phases
+          if (phase === 'challenge-hundred-to-two-hundred') {
+            const challenge = HUNDRED_TO_TWO_HUNDRED_CHALLENGES[0];
+            const targetNumber = challenge.targets[hundredToTwoHundredTargetIndex];
+            const isCorrect = totalNumber === targetNumber;
+            
+            return (
+              <div style={{ marginTop: 20, textAlign: 'center' }}>
+                <button
+                  onClick={handleValidateHundredToTwoHundred}
+                  style={{
+                    fontSize: 16,
+                    padding: '10px 30px',
+                    background: isCorrect
+                      ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                      : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    boxShadow: isCorrect
+                      ? '0 4px 8px rgba(34, 197, 94, 0.3)'
+                      : '0 4px 8px rgba(249, 115, 22, 0.3)',
+                    transition: 'all 0.2s ease',
+                    animation: isCorrect ? 'celebration 0.6s ease-in-out infinite' : 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {isCorrect ? '✅ VALIDER LE DÉFI' : '🎯 VALIDER LE DÉFI'}
+                </button>
+              </div>
+            );
+          }
+          
+          if (phase === 'challenge-two-hundred-to-three-hundred') {
+            const challenge = TWO_HUNDRED_TO_THREE_HUNDRED_CHALLENGES[0];
+            const targetNumber = challenge.targets[twoHundredToThreeHundredTargetIndex];
+            const isCorrect = totalNumber === targetNumber;
+            
+            return (
+              <div style={{ marginTop: 20, textAlign: 'center' }}>
+                <button
+                  onClick={handleValidateTwoHundredToThreeHundred}
+                  style={{
+                    fontSize: 16,
+                    padding: '10px 30px',
+                    background: isCorrect
+                      ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                      : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    boxShadow: isCorrect
+                      ? '0 4px 8px rgba(34, 197, 94, 0.3)'
+                      : '0 4px 8px rgba(249, 115, 22, 0.3)',
+                    transition: 'all 0.2s ease',
+                    animation: isCorrect ? 'celebration 0.6s ease-in-out infinite' : 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {isCorrect ? '✅ VALIDER LE DÉFI' : '🎯 VALIDER LE DÉFI'}
+                </button>
+              </div>
+            );
+          }
+          
           const challengeIndex = ['challenge-hundreds-1', 'challenge-hundreds-2', 'challenge-hundreds-3'].indexOf(phase as string);
           const challenge = HUNDREDS_CHALLENGES[challengeIndex];
           const targetNumber = challenge.targets[hundredsTargetIndex];

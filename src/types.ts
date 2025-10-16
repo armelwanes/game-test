@@ -28,7 +28,14 @@ export type Phase =
     | 'challenge-tens-1'
     | 'challenge-tens-2'
     | 'challenge-tens-3'
+    | 'practice-hundred'
+    | 'learn-hundred-to-hundred-ten'
+    | 'learn-hundred-ten-to-two-hundred'
+    | 'challenge-hundred-to-two-hundred'
+    | 'learn-two-hundred-to-three-hundred'
+    | 'challenge-two-hundred-to-three-hundred'
     | 'learn-hundreds'
+    | 'learn-hundreds-simple-combination'
     | 'learn-hundreds-combination'
     | 'challenge-hundreds-1'
     | 'challenge-hundreds-2'
@@ -65,10 +72,18 @@ export const TENS_CHALLENGES: Challenge[] = [
   { phase: 'challenge-tens-3', targets: [21, 43, 65, 87, 19, 92] }
 ];
 
+export const HUNDRED_TO_TWO_HUNDRED_CHALLENGES: Challenge[] = [
+  { phase: 'challenge-hundred-to-two-hundred', targets: [110, 125, 150, 167, 190] }
+];
+
+export const TWO_HUNDRED_TO_THREE_HUNDRED_CHALLENGES: Challenge[] = [
+  { phase: 'challenge-two-hundred-to-three-hundred', targets: [210, 250, 280] }
+];
+
 export const HUNDREDS_CHALLENGES: Challenge[] = [
-  { phase: 'challenge-hundreds-1', targets: [123, 456] },
-  { phase: 'challenge-hundreds-2', targets: [234, 567, 321, 789] },
-  { phase: 'challenge-hundreds-3', targets: [145, 268, 392, 514, 637, 851] }
+  { phase: 'challenge-hundreds-1', targets: [100, 200, 300, 120, 250] }, // Facile à moyen
+  { phase: 'challenge-hundreds-2', targets: [140, 230, 340, 156, 278] }, // Moyen
+  { phase: 'challenge-hundreds-3', targets: [123, 267, 389, 456, 598] }  // Difficile
 ];
 
 export const THOUSANDS_CHALLENGES: Challenge[] = [
@@ -103,6 +118,11 @@ export interface MachineState {
     tenToTwentyTargetIndex: number;
     tenToTwentySuccessCount: number;
     practiceTenRepetitions: number;
+    practiceHundredCount: number;
+    hundredToTwoHundredTargetIndex: number;
+    hundredToTwoHundredSuccessCount: number;
+    twoHundredToThreeHundredTargetIndex: number;
+    twoHundredToThreeHundredSuccessCount: number;
     timer: number | null;
 
   userInput: string;
@@ -141,11 +161,18 @@ export interface MachineState {
     setTenToTwentyTargetIndex: (index: number) => void;
     setTenToTwentySuccessCount: (count: number) => void;
     setPracticeTenRepetitions: (count: number) => void;
+    setPracticeHundredCount: (count: number) => void;
+    setHundredToTwoHundredTargetIndex: (index: number) => void;
+    setHundredToTwoHundredSuccessCount: (count: number) => void;
+    setTwoHundredToThreeHundredTargetIndex: (index: number) => void;
+    setTwoHundredToThreeHundredSuccessCount: (count: number) => void;
     resetUnitChallenge: () => void;
     resetTensChallenge: () => void;
     resetHundredsChallenge: () => void;
     resetThousandsChallenge: () => void;
     resetTenToTwentyChallenge: () => void;
+    resetHundredToTwoHundredChallenge: () => void;
+    resetTwoHundredToThreeHundredChallenge: () => void;
     updateInstruction: () => void;
     runAutoCount: () => void;
     updateButtonVisibility: () => void;
@@ -161,6 +188,8 @@ export interface MachineState {
     handleValidateLearning: () => void;
     handleValidateTenToTwenty: () => void;
     handleValidateTens: () => void;
+    handleValidateHundredToTwoHundred: () => void;
+    handleValidateTwoHundredToThreeHundred: () => void;
     handleValidateHundreds: () => void;
     handleValidateThousands: () => void;
     startLearningPhase: () => void;
