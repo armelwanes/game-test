@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useStore } from './store.ts';
-import { UNIT_CHALLENGES, TENS_CHALLENGES, HUNDREDS_CHALLENGES, THOUSANDS_CHALLENGES } from './types.ts';
+import { UNIT_CHALLENGES, TEN_TO_TWENTY_CHALLENGES, TENS_CHALLENGES, HUNDREDS_CHALLENGES, THOUSANDS_CHALLENGES } from './types.ts';
 
 
 function MachineANombres() {
@@ -12,6 +12,7 @@ function MachineANombres() {
     feedback,
     isCountingAutomatically,
     unitTargetIndex,
+    tenToTwentyTargetIndex,
     tensTargetIndex,
     hundredsTargetIndex,
     thousandsTargetIndex,
@@ -20,6 +21,7 @@ function MachineANombres() {
     handleAdd,
     handleSubtract,
     handleValidateLearning,
+    handleValidateTenToTwenty,
     handleValidateTens,
     handleValidateHundreds,
     handleValidateThousands,
@@ -189,10 +191,10 @@ function MachineANombres() {
               else if (phase === 'normal') {
                 isInteractive = true;
               }
-              else if ((phase === 'tutorial' || phase === 'explore-units' || phase === 'click-add' || phase === 'click-remove' || phase.startsWith('challenge-unit-')) && isUnit) {
+              else if ((phase === 'tutorial' || phase === 'explore-units' || phase === 'click-add' || phase === 'click-remove' || phase.startsWith('challenge-unit-') || phase === 'challenge-ten-to-twenty') && isUnit) {
                 isInteractive = true;
               }
-              else if (phase === 'learn-carry' && isUnit) {
+              else if ((phase === 'learn-carry' || phase === 'practice-ten' || phase === 'learn-ten-to-twenty' || phase === 'learn-twenty-to-thirty') && isUnit) {
                 isInteractive = true;
               }
               else if ((phase.startsWith('challenge-tens-') || phase === 'learn-tens-combination') && (isUnit || originalIdx === 1)) {
@@ -289,6 +291,47 @@ function MachineANombres() {
 
         {/* BOUTON VALIDER (Défi d'apprentissage 5) */}
         {showValidateLearningButton && (() => {
+          // Handle challenge-ten-to-twenty separately
+          if (phase === 'challenge-ten-to-twenty') {
+            const challenge = TEN_TO_TWENTY_CHALLENGES[0];
+            const targetNumber = challenge.targets[tenToTwentyTargetIndex];
+            const isCorrect = totalNumber === targetNumber;
+            
+            return (
+              <div style={{ marginTop: 20, textAlign: 'center' }}>
+                <button
+                  onClick={handleValidateTenToTwenty}
+                  style={{
+                    fontSize: 16,
+                    padding: '10px 30px',
+                    background: isCorrect
+                      ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                      : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    boxShadow: isCorrect
+                      ? '0 4px 8px rgba(34, 197, 94, 0.3)'
+                      : '0 4px 8px rgba(249, 115, 22, 0.3)',
+                    transition: 'all 0.2s ease',
+                    animation: isCorrect ? 'celebration 0.6s ease-in-out infinite' : 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {isCorrect ? '✅ VALIDER LE DÉFI' : '🎯 VALIDER LE DÉFI'}
+                </button>
+              </div>
+            );
+          }
+          
+          // Handle regular unit challenges
           const challengeIndex = ['challenge-unit-1', 'challenge-unit-2', 'challenge-unit-3'].indexOf(phase as string);
           const challenge = UNIT_CHALLENGES[challengeIndex];
           const targetNumber = challenge.targets[unitTargetIndex];

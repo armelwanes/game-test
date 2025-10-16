@@ -6,6 +6,7 @@ import type {
 import {
     FEEDBACK_DELAY,
     UNIT_CHALLENGES,
+    TEN_TO_TWENTY_CHALLENGES,
     TENS_CHALLENGES,
     HUNDREDS_CHALLENGES,
     THOUSANDS_CHALLENGES
@@ -36,6 +37,9 @@ export const useStore = create<MachineState>((set, get) => ({
     },
     unitTargetIndex: 0,
     unitSuccessCount: 0,
+    tenToTwentyTargetIndex: 0,
+    tenToTwentySuccessCount: 0,
+    practiceTenRepetitions: 0,
     tensTargetIndex: 0,
     tensSuccessCount: 0,
     hundredsTargetIndex: 0,
@@ -125,8 +129,23 @@ export const useStore = create<MachineState>((set, get) => ({
         set({ thousandsSuccessCount: count });
         get().updateInstruction();
     },
+    setTenToTwentyTargetIndex: (index) => {
+        set({ tenToTwentyTargetIndex: index });
+        get().updateInstruction();
+    },
+    setTenToTwentySuccessCount: (count) => {
+        set({ tenToTwentySuccessCount: count });
+        get().updateInstruction();
+    },
+    setPracticeTenRepetitions: (count) => {
+        set({ practiceTenRepetitions: count });
+    },
     resetUnitChallenge: () => {
         set({ unitTargetIndex: 0, unitSuccessCount: 0 });
+        get().updateInstruction();
+    },
+    resetTenToTwentyChallenge: () => {
+        set({ tenToTwentyTargetIndex: 0, tenToTwentySuccessCount: 0 });
         get().updateInstruction();
     },
     resetTensChallenge: () => {
@@ -222,7 +241,7 @@ export const useStore = create<MachineState>((set, get) => ({
         set({
             showUnlockButton: phase === 'normal' && !allColumnsUnlocked,
             showStartLearningButton: phase === 'done',
-            showValidateLearningButton: phase.startsWith('challenge-unit-'),
+            showValidateLearningButton: phase.startsWith('challenge-unit-') || phase === 'challenge-ten-to-twenty',
             showValidateTensButton: phase.startsWith('challenge-tens-'),
             showValidateHundredsButton: phase.startsWith('challenge-hundreds-'),
             showValidateThousandsButton: phase.startsWith('challenge-thousands-'),
@@ -287,8 +306,23 @@ export const useStore = create<MachineState>((set, get) => ({
             }
         }
 
+        // --- LOGIQUE POUR 'learn-ten-to-twenty' ---
+        else if (phase === 'learn-ten-to-twenty') {
+            // This phase is NOT auto-counting, it's user-driven
+            // The logic is handled in handleAdd
+            return;
+        }
+
+        // --- LOGIQUE POUR 'learn-twenty-to-thirty' ---
+        else if (phase === 'learn-twenty-to-thirty') {
+            // This phase is NOT auto-counting, it's user-driven
+            // The logic is handled in handleAdd
+            return;
+        }
+
         // --- LOGIQUE POUR 'learn-tens' ---
         else if (phase === 'learn-tens') {
+            const COUNT_SPEED_SLOW = 2500; // Ralenti à 2.5 secondes
             const tensValue = columns[1].value;
             if (columns[0].value !== 0) { // Ensure units are 0
                 get().setColumns(cols => {
@@ -298,7 +332,20 @@ export const useStore = create<MachineState>((set, get) => ({
                 });
             }
 
-            if (tensValue < 9) {
+            // Start from 3 (30) instead of 0
+            if (tensValue < 3) {
+                get().setColumns(cols => {
+                    const newCols = [...cols];
+                    newCols[1].value = 3;
+                    newCols[0].value = 0;
+                    return newCols;
+                });
+                get().setFeedback("**30** (TRENTE) ! Compte avec moi les paquets : UN, DEUX, TROIS !");
+                const newTimer = setTimeout(() => {
+                    get().runAutoCount();
+                }, COUNT_SPEED_SLOW);
+                set({ timer: newTimer as unknown as number });
+            } else if (tensValue < 9) {
                 const newTimer = setTimeout(() => {
                     get().setColumns(prevCols => {
                         const newCols = [...prevCols];
@@ -309,12 +356,16 @@ export const useStore = create<MachineState>((set, get) => ({
                     const nextValue = tensValue + 1;
                     const displayNumber = nextValue * 10;
                     let infoMessage = "";
-                    if (nextValue === 1) infoMessage = `**${displayNumber}** (DIX) ! 🎯 Une dizaine = 10 unités !`;
+                    if (nextValue === 4) infoMessage = `**${displayNumber}** (QUARANTE) ! 🎯 Compte les paquets : UN, DEUX, TROIS, QUATRE !`;
+                    else if (nextValue === 5) infoMessage = `**${displayNumber}** (CINQUANTE) ! 🎯 5 paquets de 10 !`;
+                    else if (nextValue === 6) infoMessage = `**${displayNumber}** (SOIXANTE) ! 🎯 6 paquets de 10 !`;
+                    else if (nextValue === 7) infoMessage = `**${displayNumber}** (SOIXANTE-DIX) ! 🎯 7 paquets de 10 !`;
+                    else if (nextValue === 8) infoMessage = `**${displayNumber}** (QUATRE-VINGTS) ! 🎯 8 paquets de 10 !`;
                     else if (nextValue === 9) infoMessage = `**${displayNumber}** (QUATRE-VINGT-DIX) ! 🎯 Presque 100 !`;
                     else infoMessage = `**${displayNumber}** !`;
                     get().setFeedback(infoMessage);
                     get().runAutoCount(); // Continue counting
-                }, COUNT_SPEED);
+                }, COUNT_SPEED_SLOW);
                 set({ timer: newTimer as unknown as number });
             } else { // tensValue is 9
                 get().setFeedback("STOP ! 🛑 Le compteur est à 90. Tu as vu tous les nombres avec les dizaines ! Bravo !");
@@ -326,7 +377,7 @@ export const useStore = create<MachineState>((set, get) => ({
                         get().setPhase('learn-tens-combination');
                         get().setPendingAutoCount(true);
                     }, FEEDBACK_DELAY);
-                }, COUNT_SPEED * 3);
+                }, COUNT_SPEED_SLOW * 3);
                 set({ timer: newTimer as unknown as number });
             }
         }
@@ -631,6 +682,7 @@ export const useStore = create<MachineState>((set, get) => ({
             if (currentPhaseForCheck === 'intro-discover' || currentPhaseForCheck === 'intro-add-roll') return isUnitsColumn(idx);
             if (currentPhaseForCheck === 'normal') return true;
             if (isUnitsColumn(idx)) return true;
+            if (currentPhaseForCheck === 'practice-ten' || currentPhaseForCheck === 'learn-ten-to-twenty' || currentPhaseForCheck === 'challenge-ten-to-twenty' || currentPhaseForCheck === 'learn-twenty-to-thirty') return isUnitsColumn(idx);
             if (idx === 1 && (currentPhaseForCheck.startsWith('challenge-tens-') || currentPhaseForCheck === 'learn-tens-combination')) return true;
             if ((idx === 1 || idx === 2) && (currentPhaseForCheck.startsWith('challenge-hundreds-') || currentPhaseForCheck === 'learn-hundreds-combination')) return true;
             if ((idx === 1 || idx === 2 || idx === 3) && (currentPhaseForCheck.startsWith('challenge-thousands-') || currentPhaseForCheck === 'learn-thousands-combination')) return true;
@@ -774,18 +826,125 @@ export const useStore = create<MachineState>((set, get) => ({
                 return;
             }
         } else if (phase === 'learn-carry' && hasCarry) {
-            sequenceFeedback("INCROYABLE ! 🎆 C'est de la MAGIE ! 10 billes sont devenues 1 bille dans la colonne suivante !", "C'est la RÈGLE D'OR : 10 billes = 1 bille dans la colonne de gauche !");
+            sequenceFeedback("INCROYABLE ! 🎆 C'est de la MAGIE ! 10 petites billes sont devenues 1 PAQUET de 10 !", "C'est la RÈGLE D'OR : 10 billes = 1 paquet dans la colonne de gauche !");
             setTimeout(() => {
                 const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
                 set({
                     columns: resetCols,
-                    phase: 'learn-tens',
-                    pendingAutoCount: true,
-                    isCountingAutomatically: false
+                    phase: 'practice-ten',
+                    practiceTenRepetitions: 0
                 });
                 get().updateButtonVisibility();
-                sequenceFeedback("Bravo ! 🎉 Maintenant on va apprendre les DIZAINES !", "Observe comment la machine compte par dizaines : 10, 20, 30... !");
+                sequenceFeedback("WOW ! 10 petites billes = 1 PAQUET de 10 !", "Clique sur ∇ pour revenir à 9 !");
             }, FEEDBACK_DELAY * 2);
+        } else if (phase === 'practice-ten') {
+            const tensValue = newCols[1].value;
+            const { practiceTenRepetitions } = get();
+            
+            if (isUnitsColumn(idx) && hasCarry && tensValue === 1) {
+                const newRepetitions = practiceTenRepetitions + 1;
+                set({ practiceTenRepetitions: newRepetitions });
+                
+                if (newRepetitions >= 3) {
+                    sequenceFeedback("Parfait ! 🎉 Tu as bien compris le concept de paquet !", "Maintenant on va compter AVEC les paquets !");
+                    setTimeout(() => {
+                        // Start at 10 (1 ten, 0 units)
+                        const startCols = initialColumns.map((col, i) => ({ ...col, unlocked: i <= 1 }));
+                        startCols[1].value = 1;
+                        startCols[0].value = 0;
+                        set({
+                            columns: startCols,
+                            phase: 'learn-ten-to-twenty'
+                        });
+                        get().updateButtonVisibility();
+                        get().setFeedback("DIX ! Tu as 1 paquet ! Ajoute 1 bille ! △ sur UNITÉS");
+                    }, FEEDBACK_DELAY * 2);
+                } else {
+                    get().setFeedback("Encore ! 🎉 Clique sur ∇ pour revenir à 9, puis refais la magie avec △ !");
+                }
+            }
+        } else if (phase === 'learn-ten-to-twenty') {
+            const unitsValue = newCols[0].value;
+            const tensValue = newCols[1].value;
+            
+            if (!isUnitsColumn(idx)) {
+                get().setFeedback("Non ! Clique sur les UNITÉS (△ sur la colonne de droite) !");
+                const revertCols = [...columns];
+                set({ columns: revertCols });
+                return;
+            }
+            
+            if (unitsValue === 0 && tensValue === 2) {
+                // Reached 20!
+                sequenceFeedback("💥 VINGT ! 2 paquets de 10 !", "Bravo ! 🎉 Tu as compté de 10 à 20 tout seul !");
+                setTimeout(() => {
+                    const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+                    set({
+                        columns: resetCols,
+                        phase: 'challenge-ten-to-twenty'
+                    });
+                    get().resetTenToTwentyChallenge();
+                    get().updateButtonVisibility();
+                    get().setFeedback(`🎯 Mini-défi ! Montre-moi **DOUZE** (12) avec les boutons !`);
+                }, FEEDBACK_DELAY * 2);
+            } else if (unitsValue === 1 && tensValue === 1) {
+                get().setFeedback("ONZE ! 1 paquet + 1 bille. Continue ! △");
+            } else if (unitsValue === 2 && tensValue === 1) {
+                get().setFeedback("DOUZE ! 1 paquet + 2 billes. Encore ! △");
+            } else if (unitsValue === 3 && tensValue === 1) {
+                get().setFeedback("TREIZE ! Continue ! △");
+            } else if (unitsValue === 4 && tensValue === 1) {
+                get().setFeedback("QUATORZE ! Encore ! △");
+            } else if (unitsValue === 5 && tensValue === 1) {
+                get().setFeedback("QUINZE ! Continue ! △");
+            } else if (unitsValue === 6 && tensValue === 1) {
+                get().setFeedback("SEIZE ! Encore ! △");
+            } else if (unitsValue === 7 && tensValue === 1) {
+                get().setFeedback("DIX-SEPT ! Tu entends ? DIX-SEPT ! △");
+            } else if (unitsValue === 8 && tensValue === 1) {
+                get().setFeedback("DIX-HUIT ! Continue ! △");
+            } else if (unitsValue === 9 && tensValue === 1) {
+                sequenceFeedback("DIX-NEUF ! STOP ✋ Tout est presque plein !", "Que va-t-il se passer ? Clique sur △ !");
+            }
+        } else if (phase.startsWith('challenge-ten-to-twenty')) {
+            const challenge = TEN_TO_TWENTY_CHALLENGES[0];
+            const targetNumber = challenge.targets[get().tenToTwentyTargetIndex];
+            if (newCols.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0) > targetNumber) {
+                get().setFeedback(`Oups ! Tu as dépassé ${targetNumber}. Utilise ∇ pour revenir à ${targetNumber} !`);
+                return;
+            }
+        } else if (phase === 'learn-twenty-to-thirty') {
+            const unitsValue = newCols[0].value;
+            const tensValue = newCols[1].value;
+            
+            if (!isUnitsColumn(idx)) {
+                get().setFeedback("Non ! Continue avec les UNITÉS ! △ sur la colonne de droite !");
+                const revertCols = [...columns];
+                set({ columns: revertCols });
+                return;
+            }
+            
+            if (unitsValue === 0 && tensValue === 3) {
+                // Reached 30!
+                sequenceFeedback("💥 TRENTE ! TROIS paquets de 10 !", "Bravo ! 🎉 Tu as compris que c'est le même principe que 9→10 et 19→20 !");
+                setTimeout(() => {
+                    const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+                    // Now move to learn-tens which will start at 30 and count to 90
+                    set({
+                        columns: resetCols,
+                        phase: 'learn-tens',
+                        pendingAutoCount: true,
+                        isCountingAutomatically: false
+                    });
+                    get().updateButtonVisibility();
+                    sequenceFeedback("Maintenant, regarde la machine compter les dizaines rondes !", "40, 50, 60... Observe bien !");
+                }, FEEDBACK_DELAY * 2);
+            } else if (unitsValue < 9 && tensValue === 2) {
+                const number = tensValue * 10 + unitsValue;
+                get().setFeedback(`${number} ! Continue à remplir jusqu'à 29 ! △`);
+            } else if (unitsValue === 9 && tensValue === 2) {
+                sequenceFeedback("29 ! VINGT-NEUF ! Que va-t-il se passer ?", "Clique sur △ pour découvrir !");
+            }
         } else if (phase === 'normal' && hasCarry) {
             get().setFeedback("Échange magique ! 10 billes → 1 bille dans la colonne de gauche ! 🎩");
         } else if (phase === 'normal' || phase === 'done' || phase === 'learn-units') {
@@ -805,6 +964,7 @@ export const useStore = create<MachineState>((set, get) => ({
         const isAllowedColumn = () => {
             if (phase === 'normal') return true;
             if (isUnitsColumn(idx)) return true;
+            if (phase === 'practice-ten' || phase === 'learn-ten-to-twenty' || phase === 'challenge-ten-to-twenty' || phase === 'learn-twenty-to-thirty') return isUnitsColumn(idx);
             if (idx === 1 && (phase.startsWith('challenge-tens-') || phase === 'learn-tens-combination')) return true;
             if ((idx === 1 || idx === 2) && (phase.startsWith('challenge-hundreds-') || phase === 'learn-hundreds-combination')) return true;
             if ((idx === 1 || idx === 2 || idx === 3) && (phase.startsWith('challenge-thousands-') || phase === 'learn-thousands-combination')) return true;
@@ -843,7 +1003,13 @@ export const useStore = create<MachineState>((set, get) => ({
 
         if (tempTotalBefore > 0) {
             set({ columns: newCols });
-            if (!['click-remove', 'tutorial', 'explore-units'].includes(phase) && !phase.startsWith('challenge-unit-')) {
+            if (phase === 'practice-ten' && newCols[0].value === 9 && newCols[1].value === 0) {
+                get().setFeedback("Bien ! Tu es revenu à 9. Maintenant, refais la magie ! Clique sur △ pour transformer 10 billes en 1 paquet !");
+            } else if (phase === 'learn-ten-to-twenty') {
+                get().setFeedback("On ne descend pas ! Continue à monter avec △ sur UNITÉS !");
+            } else if (phase === 'learn-twenty-to-thirty') {
+                get().setFeedback("On ne descend pas ! Continue à monter avec △ sur UNITÉS !");
+            } else if (!['click-remove', 'tutorial', 'explore-units'].includes(phase) && !phase.startsWith('challenge-unit-') && phase !== 'challenge-ten-to-twenty') {
                 get().setFeedback(`🎈 ${newCols[idx].value} bille${newCols[idx].value > 1 ? 's' : ''} dans ${newCols[idx].name}. Clique sur △ ou ∇ !`);
             }
         }
@@ -943,6 +1109,45 @@ export const useStore = create<MachineState>((set, get) => ({
             }
         } else {
             get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Utilise △ et ∇ !`);
+        }
+    },
+
+    handleValidateTenToTwenty: () => {
+        const { phase, columns, tenToTwentyTargetIndex, tenToTwentySuccessCount, sequenceFeedback } = get();
+        const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
+        
+        if (phase !== 'challenge-ten-to-twenty') return;
+
+        const challenge = TEN_TO_TWENTY_CHALLENGES[0];
+        const targetNumber = challenge.targets[tenToTwentyTargetIndex];
+
+        if (totalNumber === targetNumber) {
+            const newSuccessCount = tenToTwentySuccessCount + 1;
+            set({ tenToTwentySuccessCount: newSuccessCount });
+
+            if (tenToTwentyTargetIndex + 1 >= challenge.targets.length) {
+                // All challenges completed!
+                get().setFeedback("🎉 Tous les mini-défis réussis ! Tu maîtrises la composition 10+X !");
+                setTimeout(() => {
+                    // Start learn-twenty-to-thirty at 20 (2 tens, 0 units)
+                    const startCols = initialColumns.map((col, i) => ({ ...col, unlocked: i <= 1 }));
+                    startCols[1].value = 2;
+                    startCols[0].value = 0;
+                    set({
+                        columns: startCols,
+                        phase: 'learn-twenty-to-thirty'
+                    });
+                    get().updateButtonVisibility();
+                    sequenceFeedback("Maintenant, remplis la colonne des unités jusqu'à 9 !", "Clique sur △ pour ajouter des billes !");
+                }, FEEDBACK_DELAY * 2);
+            } else {
+                const nextTarget = challenge.targets[tenToTwentyTargetIndex + 1];
+                const resetCols = initialColumns.map((col, i) => i === 1 ? { ...col, unlocked: true } : col);
+                set({ tenToTwentyTargetIndex: tenToTwentyTargetIndex + 1, columns: resetCols });
+                sequenceFeedback(`✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`, `Maintenant affiche **${nextTarget}** !`);
+            }
+        } else {
+            get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
         }
     },
 
@@ -1165,8 +1370,23 @@ export const useStore = create<MachineState>((set, get) => ({
             case 'learn-carry':
                 newInstruction = "C'est le grand moment ! 🎆 Clique sur △ pour voir la transformation !";
                 break;
+            case 'practice-ten':
+                newInstruction = "Pratique le concept de paquet ! Clique sur ∇ pour revenir à 9, puis △ pour refaire l'échange magique !";
+                break;
+            case 'learn-ten-to-twenty':
+                newInstruction = "Compte de 10 à 20 ! Clique sur △ pour ajouter des billes dans les UNITÉS !";
+                break;
+            case 'challenge-ten-to-twenty': {
+                const challenge = TEN_TO_TWENTY_CHALLENGES[0];
+                const targetNumber = challenge.targets[get().tenToTwentyTargetIndex];
+                newInstruction = `Mini-défi : Affiche **${targetNumber}** puis clique sur VALIDER ! (${get().tenToTwentySuccessCount}/${challenge.targets.length})`;
+                break;
+            }
+            case 'learn-twenty-to-thirty':
+                newInstruction = "Remplis la colonne des unités jusqu'à 9 ! Clique sur △ sur les UNITÉS !";
+                break;
             case 'learn-tens':
-                newInstruction = "Regarde ! 👀 La machine compte par dizaines : 10, 20, 30...";
+                newInstruction = "Regarde ! 👀 La machine compte par dizaines : 40, 50, 60...";
                 break;
             case 'learn-tens-combination':
                 newInstruction = "🎯 Observe comment on combine dizaines et unités pour former des nombres !";
@@ -1306,7 +1526,7 @@ useStore.subscribe(
                 clearTimeout(state.timer);
             }
 
-            const newTimer = setTimeout(() => {
+            setTimeout(() => {
                 const currentState = useStore.getState();
                 // Verify we're still in the same phase before transitioning
                 if (currentState.phase === 'intro-welcome') {
@@ -1316,8 +1536,6 @@ useStore.subscribe(
                     currentState.updateInstruction();
                 }
             }, 3000);
-
-           // useStore.getState().setTimer(newTimer as unknown as number);
         }
 
         // Handle intro-discover phase transition
