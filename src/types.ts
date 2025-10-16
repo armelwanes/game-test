@@ -137,6 +137,7 @@ export interface MachineState {
     setUserInput: (input: string) => void;
     setShowInputField: (show: boolean) => void;
     handleUserInputSubmit: () => void;
+    setTimer: (timer: number | null) => void;
 
     // Business logic
     sequenceFeedback: (first: string, second: string, delay?: number) => void;

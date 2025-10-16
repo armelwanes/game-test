@@ -80,7 +80,7 @@ export const useStore = create<MachineState>((set, get) => ({
             }, 3000); // ≈ 3 secondes
             set({ timer: newTimer as unknown as number });
         }
-       
+
 
         get().updateButtonVisibility();
         get().updateInstruction();
@@ -143,7 +143,7 @@ export const useStore = create<MachineState>((set, get) => ({
     },
     setUserInput: (input) => set({ userInput: input }),
     setShowInputField: (show) => set({ showInputField: show }),
-
+    setTimer: (timer) => set({ timer }),
     handleUserInputSubmit: () => {
         const { phase, userInput, sequenceFeedback } = get();
         const answer = parseInt(userInput.trim());
@@ -581,8 +581,7 @@ export const useStore = create<MachineState>((set, get) => ({
         }
     },
 
-    // --- LOGIQUE MÉTIER ---
-
+  
     sequenceFeedback: (first: string, second?: string) => {
         const combined = second ? `${first} - ${second}` : first;
         get().setFeedback(combined);
@@ -1298,18 +1297,70 @@ export const useStore = create<MachineState>((set, get) => ({
 // Subscriber for automatic phase transitions
 useStore.subscribe(
     (state, previousState) => {
-        // Automatically trigger auto-counting when conditions are met
+        // Automatically trigger transitions and auto-counting when conditions are met
+
+        // Handle intro-welcome phase transition
+        if (state.phase === 'intro-welcome') {
+            // Clear any existing timer first
+            if (state.timer) {
+                clearTimeout(state.timer);
+            }
+
+            const newTimer = setTimeout(() => {
+                const currentState = useStore.getState();
+                // Verify we're still in the same phase before transitioning
+                if (currentState.phase === 'intro-welcome') {
+                    currentState.setPhase('intro-discover');
+                    currentState.setTimer(null);
+                    currentState.updateButtonVisibility();
+                    currentState.updateInstruction();
+                }
+            }, 3000);
+
+           // useStore.getState().setTimer(newTimer as unknown as number);
+        }
+
+        // Handle intro-discover phase transition
+        if (state.phase === 'intro-discover') {
+            // Clear any existing timer first
+            if (state.timer) {
+                clearTimeout(state.timer);
+            }
+
+            setTimeout(() => {
+                const currentState = useStore.getState();
+                // Verify we're still in the same phase before transitioning
+                if (currentState.phase === 'intro-discover') {
+                    currentState.setPhase('tutorial');
+            //    currentState.setTimer(null);
+                    currentState.updateButtonVisibility();
+                    currentState.updateInstruction();
+                }
+            }, 3000);
+
+            //useStore.getState().setTimer(newTimer as unknown as number);
+        }
+
+    
+
+        // Handle auto-counting trigger for learn phases
         if (
             state.phase.startsWith('learn-') &&
             state.pendingAutoCount &&
             !state.isCountingAutomatically &&
             // Only trigger when pendingAutoCount changed to true or phase changed
-            (state.pendingAutoCount !== previousState.pendingAutoCount || state.phase !== previousState.phase)
+            (state.pendingAutoCount !== previousState.pendingAutoCount ||
+                state.phase !== previousState.phase)
         ) {
             // Use a small delay to ensure state updates are processed
             setTimeout(() => {
                 const currentState = useStore.getState();
-                if (currentState.pendingAutoCount && !currentState.isCountingAutomatically) {
+                // Re-verify conditions before executing
+                if (
+                    currentState.phase.startsWith('learn-') &&
+                    currentState.pendingAutoCount &&
+                    !currentState.isCountingAutomatically
+                ) {
                     currentState.setIsCountingAutomatically(true);
                     currentState.setPendingAutoCount(false);
                     currentState.runAutoCount();
