@@ -19,6 +19,10 @@ export type Phase =
     | 'challenge-unit-2'
     | 'challenge-unit-3'
     | 'learn-carry'
+    | 'practice-ten'
+    | 'learn-ten-to-twenty'
+    | 'challenge-ten-to-twenty'
+    | 'learn-twenty-to-thirty'
     | 'learn-tens'
     | 'learn-tens-combination'
     | 'challenge-tens-1'
@@ -49,6 +53,10 @@ export const UNIT_CHALLENGES: Challenge[] = [
   { phase: 'challenge-unit-1', targets: [3, 5, 7] },
   { phase: 'challenge-unit-2', targets: [2, 6, 8] },
   { phase: 'challenge-unit-3', targets: [4, 9, 1] }
+];
+
+export const TEN_TO_TWENTY_CHALLENGES: Challenge[] = [
+  { phase: 'challenge-ten-to-twenty', targets: [12, 15, 18] }
 ];
 
 export const TENS_CHALLENGES: Challenge[] = [
@@ -92,6 +100,9 @@ export interface MachineState {
     hundredsSuccessCount: number;
     thousandsTargetIndex: number;
     thousandsSuccessCount: number;
+    tenToTwentyTargetIndex: number;
+    tenToTwentySuccessCount: number;
+    practiceTenRepetitions: number;
     timer: number | null;
 
   userInput: string;
@@ -127,10 +138,14 @@ export interface MachineState {
     setHundredsSuccessCount: (count: number) => void;
     setThousandsTargetIndex: (index: number) => void;
     setThousandsSuccessCount: (count: number) => void;
+    setTenToTwentyTargetIndex: (index: number) => void;
+    setTenToTwentySuccessCount: (count: number) => void;
+    setPracticeTenRepetitions: (count: number) => void;
     resetUnitChallenge: () => void;
     resetTensChallenge: () => void;
     resetHundredsChallenge: () => void;
     resetThousandsChallenge: () => void;
+    resetTenToTwentyChallenge: () => void;
     updateInstruction: () => void;
     runAutoCount: () => void;
     updateButtonVisibility: () => void;
@@ -144,6 +159,7 @@ export interface MachineState {
     handleAdd: (idx: number) => void;
     handleSubtract: (idx: number) => void;
     handleValidateLearning: () => void;
+    handleValidateTenToTwenty: () => void;
     handleValidateTens: () => void;
     handleValidateHundreds: () => void;
     handleValidateThousands: () => void;
