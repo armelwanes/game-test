@@ -159,6 +159,15 @@ export interface MachineState {
   userInput: string;
   showInputField: boolean;
 
+  // Error management and feedback system
+  attemptCount: number;
+  consecutiveFailures: number;
+  frustrationLevel: 'low' | 'medium' | 'high';
+  showHelpOptions: boolean;
+  guidedMode: boolean;
+  guidedStep: number;
+  totalChallengesCompleted: number;
+
   // Callback pour effet visuel/sonore lors de la transition intro-welcome
   onIntroWelcomeTransition?: (() => void) | null;
 
@@ -181,6 +190,14 @@ export interface MachineState {
     setIsCountingAutomatically: (isCounting: boolean) => void;
     setNextPhaseAfterAuto: (phase: Phase | null) => void;
     setCompletedChallenges: (updater: ((challenges: MachineState['completedChallenges']) => MachineState['completedChallenges']) | MachineState['completedChallenges']) => void;
+    setAttemptCount: (count: number) => void;
+    setConsecutiveFailures: (count: number) => void;
+    setFrustrationLevel: (level: 'low' | 'medium' | 'high') => void;
+    setShowHelpOptions: (show: boolean) => void;
+    setGuidedMode: (guided: boolean) => void;
+    setGuidedStep: (step: number) => void;
+    setTotalChallengesCompleted: (count: number) => void;
+    resetAttempts: () => void;
     setUnitTargetIndex: (index: number) => void;
     setUnitSuccessCount: (count: number) => void;
     setTensTargetIndex: (index: number) => void;
