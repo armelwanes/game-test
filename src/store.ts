@@ -1893,7 +1893,7 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateTenToTwenty: () => {
-        const { phase, columns, tenToTwentyTargetIndex, tenToTwentySuccessCount, sequenceFeedback } = get();
+        const { phase, columns, tenToTwentyTargetIndex, tenToTwentySuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-ten-to-twenty') return;
@@ -1902,12 +1902,20 @@ export const useStore = create<MachineState>((set, get) => ({
         const targetNumber = challenge.targets[tenToTwentyTargetIndex];
 
         if (totalNumber === targetNumber) {
+            // SUCCESS!
+            const successMsg = getSuccessMessage(attemptCount + 1, false);
+            get().setFeedback(successMsg);
+            
+            // Reset attempts and update stats
+            resetAttempts();
+            setConsecutiveFailures(0);
+            setTotalChallengesCompleted(totalChallengesCompleted + 1);
+            
             const newSuccessCount = tenToTwentySuccessCount + 1;
             set({ tenToTwentySuccessCount: newSuccessCount });
 
             if (tenToTwentyTargetIndex + 1 >= challenge.targets.length) {
                 // All challenges completed!
-                get().setFeedback("🎉 Tous les mini-défis réussis ! Tu maîtrises la composition 10+X !");
                 setTimeout(() => {
                     // Start learn-twenty-to-thirty at 20 (2 tens, 0 units)
                     const startCols = initialColumns.map((col, i) => ({ ...col, unlocked: i <= 1 }));
@@ -1927,7 +1935,37 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback(`✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`, `Maintenant affiche **${nextTarget}** !`);
             }
         } else {
-            get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
+            // FAILURE - Generate progressive feedback
+            const newAttemptCount = attemptCount + 1;
+            setAttemptCount(newAttemptCount);
+            
+            const feedbackMsg = generateFeedback({
+                attemptCount: newAttemptCount,
+                consecutiveFailures,
+                frustrationLevel: detectFrustration(consecutiveFailures),
+                currentTarget: targetNumber,
+                lastUserAnswer: totalNumber
+            });
+            
+            get().setFeedback(feedbackMsg.message);
+            
+            // Show help options on 4th attempt
+            if (feedbackMsg.showHelp) {
+                setShowHelpOptions(true);
+            }
+            
+            // If too many attempts, increase consecutive failures
+            if (newAttemptCount >= 4) {
+                const newConsecutiveFailures = consecutiveFailures + 1;
+                setConsecutiveFailures(newConsecutiveFailures);
+                
+                // Check for high frustration
+                if (newConsecutiveFailures >= 3) {
+                    setTimeout(() => {
+                        get().setFeedback(getFrustrationInterventionMessage());
+                    }, FEEDBACK_DELAY * 2);
+                }
+            }
         }
     },
 
@@ -2030,7 +2068,7 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateHundredToTwoHundred: () => {
-        const { phase, columns, hundredToTwoHundredTargetIndex, hundredToTwoHundredSuccessCount, sequenceFeedback } = get();
+        const { phase, columns, hundredToTwoHundredTargetIndex, hundredToTwoHundredSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-hundred-to-two-hundred') return;
@@ -2039,12 +2077,20 @@ export const useStore = create<MachineState>((set, get) => ({
         const targetNumber = challenge.targets[hundredToTwoHundredTargetIndex];
 
         if (totalNumber === targetNumber) {
+            // SUCCESS!
+            const successMsg = getSuccessMessage(attemptCount + 1, false);
+            get().setFeedback(successMsg);
+            
+            // Reset attempts and update stats
+            resetAttempts();
+            setConsecutiveFailures(0);
+            setTotalChallengesCompleted(totalChallengesCompleted + 1);
+            
             const newSuccessCount = hundredToTwoHundredSuccessCount + 1;
             set({ hundredToTwoHundredSuccessCount: newSuccessCount });
 
             if (hundredToTwoHundredTargetIndex + 1 >= challenge.targets.length) {
                 // All challenges completed!
-                get().setFeedback("🎉 Tous les mini-défis 100-200 réussis ! Tu maîtrises la zone 100-200 !");
                 setTimeout(() => {
                     // Start learn-two-hundred-to-three-hundred at 200
                     const startCols = initialColumns.map((col, i) => ({ ...col, unlocked: i <= 2 }));
@@ -2065,12 +2111,42 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback(`✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`, `Maintenant affiche **${nextTarget}** !`);
             }
         } else {
-            get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
+            // FAILURE - Generate progressive feedback
+            const newAttemptCount = attemptCount + 1;
+            setAttemptCount(newAttemptCount);
+            
+            const feedbackMsg = generateFeedback({
+                attemptCount: newAttemptCount,
+                consecutiveFailures,
+                frustrationLevel: detectFrustration(consecutiveFailures),
+                currentTarget: targetNumber,
+                lastUserAnswer: totalNumber
+            });
+            
+            get().setFeedback(feedbackMsg.message);
+            
+            // Show help options on 4th attempt
+            if (feedbackMsg.showHelp) {
+                setShowHelpOptions(true);
+            }
+            
+            // If too many attempts, increase consecutive failures
+            if (newAttemptCount >= 4) {
+                const newConsecutiveFailures = consecutiveFailures + 1;
+                setConsecutiveFailures(newConsecutiveFailures);
+                
+                // Check for high frustration
+                if (newConsecutiveFailures >= 3) {
+                    setTimeout(() => {
+                        get().setFeedback(getFrustrationInterventionMessage());
+                    }, FEEDBACK_DELAY * 2);
+                }
+            }
         }
     },
 
     handleValidateTwoHundredToThreeHundred: () => {
-        const { phase, columns, twoHundredToThreeHundredTargetIndex, twoHundredToThreeHundredSuccessCount, sequenceFeedback } = get();
+        const { phase, columns, twoHundredToThreeHundredTargetIndex, twoHundredToThreeHundredSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-two-hundred-to-three-hundred') return;
@@ -2079,12 +2155,20 @@ export const useStore = create<MachineState>((set, get) => ({
         const targetNumber = challenge.targets[twoHundredToThreeHundredTargetIndex];
 
         if (totalNumber === targetNumber) {
+            // SUCCESS!
+            const successMsg = getSuccessMessage(attemptCount + 1, false);
+            get().setFeedback(successMsg);
+            
+            // Reset attempts and update stats
+            resetAttempts();
+            setConsecutiveFailures(0);
+            setTotalChallengesCompleted(totalChallengesCompleted + 1);
+            
             const newSuccessCount = twoHundredToThreeHundredSuccessCount + 1;
             set({ twoHundredToThreeHundredSuccessCount: newSuccessCount });
 
             if (twoHundredToThreeHundredTargetIndex + 1 >= challenge.targets.length) {
                 // All challenges completed!
-                get().setFeedback("🎉 Tous les mini-défis 200-300 réussis ! Tu maîtrises la zone 200-300 !");
                 setTimeout(() => {
                     const resetCols = initialColumns.map((col, i) => ({ ...col, unlocked: i <= 2 }));
                     set({
@@ -2103,7 +2187,37 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback(`✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`, `Maintenant affiche **${nextTarget}** !`);
             }
         } else {
-            get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
+            // FAILURE - Generate progressive feedback
+            const newAttemptCount = attemptCount + 1;
+            setAttemptCount(newAttemptCount);
+            
+            const feedbackMsg = generateFeedback({
+                attemptCount: newAttemptCount,
+                consecutiveFailures,
+                frustrationLevel: detectFrustration(consecutiveFailures),
+                currentTarget: targetNumber,
+                lastUserAnswer: totalNumber
+            });
+            
+            get().setFeedback(feedbackMsg.message);
+            
+            // Show help options on 4th attempt
+            if (feedbackMsg.showHelp) {
+                setShowHelpOptions(true);
+            }
+            
+            // If too many attempts, increase consecutive failures
+            if (newAttemptCount >= 4) {
+                const newConsecutiveFailures = consecutiveFailures + 1;
+                setConsecutiveFailures(newConsecutiveFailures);
+                
+                // Check for high frustration
+                if (newConsecutiveFailures >= 3) {
+                    setTimeout(() => {
+                        get().setFeedback(getFrustrationInterventionMessage());
+                    }, FEEDBACK_DELAY * 2);
+                }
+            }
         }
     },
 
