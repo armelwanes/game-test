@@ -48,6 +48,15 @@ function MachineANombres() {
     attemptCount,
     showHelpOptions,
     totalChallengesCompleted,
+    // New intro state
+    showResponseButtons,
+    setSelectedResponse,
+    handleIntroNameSubmit,
+    handleIntroMachineResponse,
+    handleIntroDigitsSubmit,
+    handleIntroSecondColumnChoice,
+    handleIntroMaxSubmit,
+    introMaxAttempt,
   } = useStore();
 
   // Local typing animation state
@@ -193,6 +202,18 @@ function MachineANombres() {
             let isInteractive = false;
             if (col.unlocked) {
               if (phase === 'intro-welcome' && isUnit) {
+                isInteractive = true;
+              }
+              else if (phase === 'intro-first-interaction' && isUnit) {
+                isInteractive = true;
+              }
+              else if (phase === 'intro-discover-carry' && (isUnit || originalIdx === 1)) {
+                isInteractive = true;
+              }
+              else if (phase === 'intro-count-digits' && isUnit) {
+                isInteractive = true;
+              }
+              else if (phase === 'intro-max-value-question' && introMaxAttempt === -1 && (isUnit || originalIdx === 1)) {
                 isInteractive = true;
               }
               else if (phase === 'intro-discover' && isUnit) {
@@ -676,31 +697,245 @@ function MachineANombres() {
         {/* Input field for questions */}
         {showInputField && (
           <div style={{ marginTop: 20, textAlign: 'center' }}>
-            <input
-              type="number"
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleUserInputSubmit();
-                }
-              }}
-              placeholder="Ta réponse..."
-              style={{
-                fontSize: 16,
-                padding: '8px 12px',
-                borderRadius: 6,
-                border: '2px solid #cbd5e1',
-                width: '120px',
-                textAlign: 'center',
-                marginRight: 8
-              }}
-            />
+            {phase === 'intro-welcome-personalized' ? (
+              // Text input for name
+              <>
+                <input
+                  type="text"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleIntroNameSubmit();
+                    }
+                  }}
+                  placeholder="Ton prénom (optionnel)..."
+                  style={{
+                    fontSize: 16,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '2px solid #cbd5e1',
+                    width: '200px',
+                    textAlign: 'center',
+                    marginRight: 8
+                  }}
+                />
+                <button
+                  onClick={handleIntroNameSubmit}
+                  style={{
+                    fontSize: 16,
+                    padding: '8px 20px',
+                    background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 8px rgba(14, 165, 233, 0.3)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  ✓ Continuer
+                </button>
+              </>
+            ) : phase === 'intro-count-digits' ? (
+              // Number input for digit count
+              <>
+                <input
+                  type="number"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleIntroDigitsSubmit();
+                    }
+                  }}
+                  placeholder="Nombre de chiffres..."
+                  style={{
+                    fontSize: 16,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '2px solid #cbd5e1',
+                    width: '150px',
+                    textAlign: 'center',
+                    marginRight: 8
+                  }}
+                />
+                <button
+                  onClick={handleIntroDigitsSubmit}
+                  style={{
+                    fontSize: 16,
+                    padding: '8px 20px',
+                    background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 8px rgba(14, 165, 233, 0.3)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  ✓ Valider
+                </button>
+              </>
+            ) : phase === 'intro-max-value-question' ? (
+              // Number input for max value
+              <>
+                <input
+                  type="number"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleIntroMaxSubmit();
+                    }
+                  }}
+                  placeholder="Maximum..."
+                  style={{
+                    fontSize: 16,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '2px solid #cbd5e1',
+                    width: '120px',
+                    textAlign: 'center',
+                    marginRight: 8
+                  }}
+                />
+                <button
+                  onClick={handleIntroMaxSubmit}
+                  style={{
+                    fontSize: 16,
+                    padding: '8px 20px',
+                    background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 8px rgba(14, 165, 233, 0.3)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  ✓ Valider
+                </button>
+              </>
+            ) : (
+              // Default number input
+              <>
+                <input
+                  type="number"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleUserInputSubmit();
+                    }
+                  }}
+                  placeholder="Ta réponse..."
+                  style={{
+                    fontSize: 16,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '2px solid #cbd5e1',
+                    width: '120px',
+                    textAlign: 'center',
+                    marginRight: 8
+                  }}
+                />
+                <button
+                  onClick={handleUserInputSubmit}
+                  style={{
+                    fontSize: 16,
+                    padding: '8px 20px',
+                    background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 8px rgba(14, 165, 233, 0.3)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  ✓ Valider
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Response buttons for intro-discover-machine */}
+        {showResponseButtons && phase === 'intro-discover-machine' && (
+          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
             <button
-              onClick={handleUserInputSubmit}
+              onClick={() => {
+                setSelectedResponse('belle');
+                handleIntroMachineResponse();
+              }}
               style={{
                 fontSize: 16,
-                padding: '8px 20px',
+                padding: '10px 20px',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 8px rgba(245, 158, 11, 0.3)',
+                width: '250px'
+              }}
+            >
+              Trop belle ! ✨
+            </button>
+            <button
+              onClick={() => {
+                setSelectedResponse('bof');
+                handleIntroMachineResponse();
+              }}
+              style={{
+                fontSize: 16,
+                padding: '10px 20px',
+                background: 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 8px rgba(148, 163, 184, 0.3)',
+                width: '250px'
+              }}
+            >
+              Bof... 😐
+            </button>
+            <button
+              onClick={() => {
+                setSelectedResponse('comprends-rien');
+                handleIntroMachineResponse();
+              }}
+              style={{
+                fontSize: 16,
+                padding: '10px 20px',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 8px rgba(139, 92, 246, 0.3)',
+                width: '250px'
+              }}
+            >
+              J'y comprends rien ! 🤔
+            </button>
+            <button
+              onClick={() => {
+                setSelectedResponse('cest-quoi');
+                handleIntroMachineResponse();
+              }}
+              style={{
+                fontSize: 16,
+                padding: '10px 20px',
                 background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
                 color: '#fff',
                 border: 'none',
@@ -708,10 +943,67 @@ function MachineANombres() {
                 cursor: 'pointer',
                 fontWeight: 'bold',
                 boxShadow: '0 4px 8px rgba(14, 165, 233, 0.3)',
-                transition: 'all 0.2s ease'
+                width: '250px'
               }}
             >
-              ✓ Valider
+              C'est quoi ? 🧐
+            </button>
+          </div>
+        )}
+
+        {/* Choice buttons for intro-second-column */}
+        {phase === 'intro-second-column' && (
+          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+            <button
+              onClick={() => handleIntroSecondColumnChoice('ajouter-rouleau')}
+              style={{
+                fontSize: 16,
+                padding: '10px 20px',
+                background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 8px rgba(34, 197, 94, 0.3)',
+                width: '280px'
+              }}
+            >
+              Ajouter un rouleau ! 🎡
+            </button>
+            <button
+              onClick={() => handleIntroSecondColumnChoice('plus-grande')}
+              style={{
+                fontSize: 16,
+                padding: '10px 20px',
+                background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 8px rgba(14, 165, 233, 0.3)',
+                width: '280px'
+              }}
+            >
+              Faire une plus grande machine ! 📏
+            </button>
+            <button
+              onClick={() => handleIntroSecondColumnChoice('sais-pas')}
+              style={{
+                fontSize: 16,
+                padding: '10px 20px',
+                background: 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 8px rgba(148, 163, 184, 0.3)',
+                width: '280px'
+              }}
+            >
+              Je ne sais pas ! 🤷
             </button>
           </div>
         )}

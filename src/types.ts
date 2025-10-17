@@ -7,7 +7,14 @@ export type Column = {
 
 export type Phase =
     | 'intro-welcome'
+    | 'intro-welcome-personalized'
     | 'intro-discover'
+    | 'intro-discover-machine'
+    | 'intro-first-interaction'
+    | 'intro-count-digits'
+    | 'intro-second-column'
+    | 'intro-discover-carry'
+    | 'intro-max-value-question'
     | 'intro-question-digits'
     | 'intro-add-roll'
     | 'intro-question-max'
@@ -168,6 +175,14 @@ export interface MachineState {
   guidedStep: number;
   totalChallengesCompleted: number;
 
+  // Personalization and intro state
+  userName: string;
+  introClickCount: number;
+  introDigitsAttempt: number;
+  introMaxAttempt: number;
+  showResponseButtons: boolean;
+  selectedResponse: string | null;
+
   // Callback pour effet visuel/sonore lors de la transition intro-welcome
   onIntroWelcomeTransition?: (() => void) | null;
 
@@ -198,6 +213,12 @@ export interface MachineState {
     setGuidedStep: (step: number) => void;
     setTotalChallengesCompleted: (count: number) => void;
     resetAttempts: () => void;
+    setUserName: (name: string) => void;
+    setIntroClickCount: (count: number) => void;
+    setIntroDigitsAttempt: (attempt: number) => void;
+    setIntroMaxAttempt: (attempt: number) => void;
+    setShowResponseButtons: (show: boolean) => void;
+    setSelectedResponse: (response: string | null) => void;
     setUnitTargetIndex: (index: number) => void;
     setUnitSuccessCount: (count: number) => void;
     setTensTargetIndex: (index: number) => void;
@@ -243,6 +264,16 @@ export interface MachineState {
     sequenceFeedback: (first: string, second: string, delay?: number) => void;
     handleAdd: (idx: number) => void;
     handleSubtract: (idx: number) => void;
+    handleIntroNameSubmit: () => void;
+    handleIntroMachineResponse: () => void;
+    handleIntroFirstClick: () => void;
+    handleIntroDigitsSubmit: () => void;
+    showIntroDigitsVisual: () => void;
+    runIntroDigitsGuided: () => void;
+    handleIntroSecondColumnChoice: (choice: string) => void;
+    handleIntroMaxSubmit: () => void;
+    runIntroMaxGuided: () => void;
+    completeIntroMaxGuided: () => void;
     handleValidateLearning: () => void;
     handleValidateTenToTwenty: () => void;
     handleValidateTens: () => void;
