@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useStore } from './store.ts';
-import { UNIT_CHALLENGES, TEN_TO_TWENTY_CHALLENGES, TENS_CHALLENGES, HUNDRED_TO_TWO_HUNDRED_CHALLENGES, TWO_HUNDRED_TO_THREE_HUNDRED_CHALLENGES, HUNDREDS_CHALLENGES, THOUSANDS_CHALLENGES } from './types.ts';
+import { UNIT_CHALLENGES, TEN_TO_TWENTY_CHALLENGES, TENS_CHALLENGES, HUNDRED_TO_TWO_HUNDRED_CHALLENGES, TWO_HUNDRED_TO_THREE_HUNDRED_CHALLENGES, HUNDREDS_CHALLENGES, THOUSAND_TO_TWO_THOUSAND_CHALLENGES, TWO_THOUSAND_TO_THREE_THOUSAND_CHALLENGES, THOUSANDS_SIMPLE_COMBINATION_CHALLENGES, THOUSANDS_CHALLENGES } from './types.ts';
 
 
 function MachineANombres() {
@@ -27,8 +27,14 @@ function MachineANombres() {
     handleValidateTwoHundredToThreeHundred,
     handleValidateHundreds,
     handleValidateThousands,
+    handleValidateThousandToTwoThousand,
+    handleValidateTwoThousandToThreeThousand,
+    handleValidateThousandsSimpleCombination,
     hundredToTwoHundredTargetIndex,
     twoHundredToThreeHundredTargetIndex,
+    thousandToTwoThousandTargetIndex,
+    twoThousandToThreeThousandTargetIndex,
+    thousandsSimpleCombinationTargetIndex,
     startLearningPhase,
     unlockNextColumn,
     showUnlockButton,
@@ -541,15 +547,34 @@ function MachineANombres() {
 
         {/* BOUTON VALIDER (Défis des milliers) */}
         {showValidateThousandsButton && (() => {
-          const challengeIndex = ['challenge-thousands-1', 'challenge-thousands-2', 'challenge-thousands-3'].indexOf(phase as string);
-          const challenge = THOUSANDS_CHALLENGES[challengeIndex];
-          const targetNumber = challenge.targets[thousandsTargetIndex];
+          let targetNumber = 0;
+          let handleValidate = handleValidateThousands;
+          
+          if (phase === 'challenge-thousand-to-two-thousand') {
+            const challenge = THOUSAND_TO_TWO_THOUSAND_CHALLENGES[0];
+            targetNumber = challenge.targets[thousandToTwoThousandTargetIndex];
+            handleValidate = handleValidateThousandToTwoThousand;
+          } else if (phase === 'challenge-two-thousand-to-three-thousand') {
+            const challenge = TWO_THOUSAND_TO_THREE_THOUSAND_CHALLENGES[0];
+            targetNumber = challenge.targets[twoThousandToThreeThousandTargetIndex];
+            handleValidate = handleValidateTwoThousandToThreeThousand;
+          } else if (phase === 'challenge-thousands-simple-combination') {
+            const challenge = THOUSANDS_SIMPLE_COMBINATION_CHALLENGES[0];
+            targetNumber = challenge.targets[thousandsSimpleCombinationTargetIndex];
+            handleValidate = handleValidateThousandsSimpleCombination;
+          } else {
+            const challengeIndex = ['challenge-thousands-1', 'challenge-thousands-2', 'challenge-thousands-3'].indexOf(phase as string);
+            const challenge = THOUSANDS_CHALLENGES[challengeIndex];
+            targetNumber = challenge.targets[thousandsTargetIndex];
+            handleValidate = handleValidateThousands;
+          }
+          
           const isCorrect = totalNumber === targetNumber;
           
           return (
             <div style={{ marginTop: 20, textAlign: 'center' }}>
               <button
-                onClick={handleValidateThousands}
+                onClick={handleValidate}
                 style={{
                   fontSize: 16,
                   padding: '10px 30px',
@@ -608,7 +633,9 @@ function MachineANombres() {
                   e.currentTarget.style.boxShadow = '0 4px 8px rgba(14, 165, 233, 0.3)';
                 }}
               >
-                 Commencer l'apprentissage
+                {phase === 'celebration-before-thousands' ? "🚀 DÉMARRER L'APPRENTISSAGE DES MILLIERS" : 
+                 phase === 'celebration-thousands-complete' ? "🎮 MODE LIBRE : CRÉE TES NOMBRES !" :
+                 "Commencer l'apprentissage"}
               </button>
             )}
             {showUnlockButton && (
