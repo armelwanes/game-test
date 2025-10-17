@@ -32,7 +32,7 @@ export const initialColumns: Column[] = [
 
 export const useStore = create<MachineState>((set, get) => ({
     columns: initialColumns,
-    phase: 'normal',
+    phase: 'intro-welcome-personalized',
     addClicks: 0,
     feedback: "",
     instruction: "",
@@ -81,6 +81,14 @@ export const useStore = create<MachineState>((set, get) => ({
     guidedStep: 0,
     totalChallengesCompleted: 0,
 
+    // Personalization and intro state
+    userName: "",
+    introClickCount: 0,
+    introDigitsAttempt: 0,
+    introMaxAttempt: 0,
+    showResponseButtons: false,
+    selectedResponse: null,
+
     // Callbacks pour effets visuels/sonores (à connecter côté UI)
     onIntroWelcomeTransition: null,
 
@@ -108,7 +116,22 @@ export const useStore = create<MachineState>((set, get) => ({
 
         set({ phase });
         console.log('set phase', phase);
-        if (phase === 'intro-welcome') {
+        
+        // Handle auto-transitions for intro phases
+        if (phase === 'intro-welcome-personalized') {
+            set({ showInputField: true, feedback: "", instruction: "" });
+        } else if (phase === 'intro-discover-machine') {
+            set({ showResponseButtons: true, selectedResponse: null });
+            // Auto-timeout after 10 seconds if no response
+            const newTimer = setTimeout(() => {
+                const currentState = get();
+                if (currentState.phase === 'intro-discover-machine' && !currentState.selectedResponse) {
+                    currentState.setSelectedResponse('timeout');
+                    currentState.handleIntroMachineResponse();
+                }
+            }, 10000);
+            set({ timer: newTimer as unknown as number });
+        } else if (phase === 'intro-welcome') {
             const newTimer = setTimeout(() => {
                 set({ phase: 'intro-discover', timer: null });
                 get().updateButtonVisibility();
@@ -116,7 +139,6 @@ export const useStore = create<MachineState>((set, get) => ({
             }, 3000); // ≈ 3 secondes
             set({ timer: newTimer as unknown as number });
         }
-
 
         get().updateButtonVisibility();
         get().updateInstruction();
@@ -287,6 +309,408 @@ export const useStore = create<MachineState>((set, get) => ({
     setTotalChallengesCompleted: (count) => set({ totalChallengesCompleted: count }),
     resetAttempts: () => set({ attemptCount: 0, showHelpOptions: false, guidedMode: false, guidedStep: 0 }),
     
+    // New intro state setters
+    setUserName: (name) => set({ userName: name }),
+    setIntroClickCount: (count) => set({ introClickCount: count }),
+    setIntroDigitsAttempt: (attempt) => set({ introDigitsAttempt: attempt }),
+    setIntroMaxAttempt: (attempt) => set({ introMaxAttempt: attempt }),
+    setShowResponseButtons: (show) => set({ showResponseButtons: show }),
+    setSelectedResponse: (response) => set({ selectedResponse: response }),
+    
+    
+    // New intro phase handlers
+    handleIntroNameSubmit: () => {
+        const { userInput, sequenceFeedback } = get();
+        const name = userInput.trim() || "l'enfant";
+        set({ userName: name, showInputField: false, userInput: "" });
+        
+        sequenceFeedback(
+            `Enchanté ${name} ! Moi c'est Professeur Numérix ! 🎩`,
+            "(Bruits de marteau sur du métal et de perceuse) Paf, Crac… Bim… Tchac ! Quel vacarme !"
+        );
+        
+        setTimeout(() => {
+            set({ feedback: "Voilà, j'ai terminé ma nouvelle machine !" });
+            setTimeout(() => {
+                set({ phase: 'intro-discover-machine' });
+                get().updateInstruction();
+            }, FEEDBACK_DELAY);
+        }, FEEDBACK_DELAY * 2);
+    },
+
+    handleIntroMachineResponse: () => {
+        const { selectedResponse, userName, sequenceFeedback } = get();
+        const name = userName || "l'enfant";
+        
+        set({ showResponseButtons: false });
+        
+        if (selectedResponse === 'belle') {
+            sequenceFeedback(
+                "Merci ! J'ai passé beaucoup de temps dessus ! 😊",
+                "Tu vas voir, elle est aussi MAGIQUE que belle !"
+            );
+        } else if (selectedResponse === 'bof') {
+            sequenceFeedback(
+                "Haha ! Je comprends, elle n'a pas l'air très impressionnante comme ça ! 😅",
+                "Mais attends de voir ce qu'elle peut faire !"
+            );
+        } else if (selectedResponse === 'comprends-rien') {
+            sequenceFeedback(
+                "C'est NORMAL ! Même moi j'avais du mal au début ! 😄",
+                "C'est justement pour ça qu'on va l'explorer ENSEMBLE !"
+            );
+        } else if (selectedResponse === 'cest-quoi') {
+            sequenceFeedback(
+                "Excellente question ! 🎓 C'est une MACHINE À COMPTER !",
+                "Elle va nous apprendre comment fonctionnent les nombres !"
+            );
+        } else { // timeout
+            sequenceFeedback(
+                `Tu es peut-être un peu timide ${name} ? Pas de problème ! 😊`,
+                "Laisse-moi te la présenter..."
+            );
+        }
+        
+        setTimeout(() => {
+            set({ feedback: "Prêt(e) à découvrir ses secrets ?" });
+            setTimeout(() => {
+                set({ phase: 'intro-first-interaction' });
+                get().updateInstruction();
+            }, FEEDBACK_DELAY);
+        }, FEEDBACK_DELAY * 2);
+    },
+
+    handleIntroFirstClick: () => {
+        const { introClickCount, columns, sequenceFeedback } = get();
+        const newCols = [...columns];
+        
+        if (introClickCount === 0) {
+            newCols[0].value = 1;
+            set({ columns: newCols, introClickCount: 1 });
+            sequenceFeedback(
+                "SUPER ! Tu as vu ? Une lumière s'est allumée ! 💡",
+                "Et le chiffre est passé de 0 à 1 ! Continue ! Clique encore sur △ !"
+            );
+        } else if (introClickCount < 9) {
+            newCols[0].value = introClickCount + 1;
+            set({ columns: newCols, introClickCount: introClickCount + 1 });
+            
+            const messages = [
+                "", // 0
+                "", // 1 - already handled above
+                "2 ! Continue !",
+                "3 ! Tu vois comme c'est facile ?",
+                "4 ! Les lumières s'allument une par une !",
+                "5 ! La moitié !",
+                "6 ! Continue jusqu'au bout !",
+                "7 !",
+                "8 ! Presque plein !",
+                "9 ! STOP ! C'est PLEIN ! 🎯"
+            ];
+            
+            if (messages[introClickCount + 1]) {
+                set({ feedback: messages[introClickCount + 1] });
+            }
+            
+            if (introClickCount + 1 === 9) {
+                setTimeout(() => {
+                    sequenceFeedback(
+                        "Et voilà, on a REMPLI la machine ! 🎉",
+                        "Tu as vu comme les lumières s'allument en même temps que les chiffres changent ?"
+                    );
+                    setTimeout(() => {
+                        set({ feedback: "Maintenant essaie le bouton ROUGE avec la flèche vers le BAS ∇ !" });
+                    }, FEEDBACK_DELAY * 2);
+                }, 1000);
+            }
+        }
+    },
+
+    handleIntroDigitsSubmit: () => {
+        const { userInput, introDigitsAttempt, sequenceFeedback } = get();
+        const answer = parseInt(userInput.trim());
+        const newAttempt = introDigitsAttempt + 1;
+        
+        set({ introDigitsAttempt: newAttempt, userInput: "" });
+        
+        if (answer === 10) {
+            // Correct answer!
+            sequenceFeedback(
+                "BRAVO ! 🎉🎉🎉 C'est EXACT ! Il y a 10 chiffres différents !",
+                "Tu n'as pas oublié le ZÉRO ! 👏"
+            );
+            setTimeout(() => {
+                set({ feedback: "0, 1, 2, 3, 4, 5, 6, 7, 8, 9 = 10 chiffres ! Le zéro est un peu spécial, mais il est TRÈS important !" });
+                setTimeout(() => {
+                    set({ feedback: "Donc en tout, nous avons bien 10 chiffres différents !" });
+                    setTimeout(() => {
+                        set({ showInputField: false, phase: 'intro-second-column', introDigitsAttempt: 0 });
+                        get().updateInstruction();
+                    }, FEEDBACK_DELAY);
+                }, FEEDBACK_DELAY);
+            }, FEEDBACK_DELAY * 2);
+        } else if (answer === 9) {
+            if (newAttempt === 1) {
+                sequenceFeedback(
+                    "Hmm... pas tout à fait ! 🤔 Je comprends pourquoi tu penses ça !",
+                    "Tu as compté : 1, 2, 3, 4, 5, 6, 7, 8, 9... ça fait 9 !"
+                );
+                setTimeout(() => {
+                    set({ feedback: "Mais... tu n'oublies pas quelque chose ? 😉 Réfléchis bien et réessaie !" });
+                }, FEEDBACK_DELAY * 2);
+            } else if (newAttempt === 2) {
+                sequenceFeedback(
+                    "Presque ! Mais regarde le PREMIER chiffre ! 👀",
+                    "Celui tout au début, avant le 1... C'est le... ? 🤔"
+                );
+            } else {
+                // Attempt 3: guided counting
+                set({ showInputField: false });
+                sequenceFeedback(
+                    "Ce n'est pas grave ! On va compter ENSEMBLE ! 🤝",
+                    "Regarde l'écran et compte avec moi à voix haute !"
+                );
+                setTimeout(() => {
+                    get().runIntroDigitsGuided();
+                }, FEEDBACK_DELAY * 2);
+            }
+        } else {
+            if (newAttempt === 1) {
+                sequenceFeedback(
+                    "Hmm... ce n'est pas ça ! 🤔",
+                    "Tu veux que je te donne un indice ?"
+                );
+                set({ showHelpOptions: true });
+            } else if (newAttempt === 2) {
+                set({ showInputField: false });
+                sequenceFeedback(
+                    "D'accord, regarde bien !",
+                    "Voici TOUS les chiffres que la machine peut afficher :"
+                );
+                setTimeout(() => {
+                    get().showIntroDigitsVisual();
+                }, FEEDBACK_DELAY * 2);
+            } else {
+                // Attempt 3: guided counting
+                set({ showInputField: false });
+                sequenceFeedback(
+                    "Ce n'est pas grave ! On va compter ENSEMBLE ! 🤝",
+                    "Regarde l'écran et compte avec moi à voix haute !"
+                );
+                setTimeout(() => {
+                    get().runIntroDigitsGuided();
+                }, FEEDBACK_DELAY * 2);
+            }
+        }
+    },
+
+    showIntroDigitsVisual: () => {
+        const { setFeedback, setShowInputField } = get();
+        const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let index = 0;
+        
+        const showNextDigit = () => {
+            if (index < digits.length) {
+                setFeedback(`${digits.slice(0, index + 1).join(', ')}...`);
+                index++;
+                setTimeout(showNextDigit, 600);
+            } else {
+                setTimeout(() => {
+                    setFeedback("Maintenant, combien en vois-tu ? Compte-les bien ! 👆");
+                    setShowInputField(true);
+                }, 1000);
+            }
+        };
+        
+        showNextDigit();
+    },
+
+    runIntroDigitsGuided: () => {
+        const { setFeedback, columns } = get();
+        const steps = [
+            { value: 0, text: "ZÉRO ! C'est le premier ! Lève 1 doigt ! ☝️" },
+            { value: 1, text: "UN ! Maintenant 2 doigts ! ✌️" },
+            { value: 2, text: "DEUX ! 3 doigts ! 🤟" },
+            { value: 3, text: "TROIS ! 4 doigts !" },
+            { value: 4, text: "QUATRE ! 5 doigts ! ✋" },
+            { value: 5, text: "CINQ ! 6 doigts !" },
+            { value: 6, text: "SIX ! 7 doigts !" },
+            { value: 7, text: "SEPT ! 8 doigts !" },
+            { value: 8, text: "HUIT ! 9 doigts !" },
+            { value: 9, text: "NEUF ! 10 doigts ! 🙌" }
+        ];
+        
+        let index = 0;
+        const newCols = [...columns];
+        
+        const showNextStep = () => {
+            if (index < steps.length) {
+                newCols[0].value = steps[index].value;
+                set({ columns: [...newCols] });
+                setFeedback(steps[index].text);
+                index++;
+                setTimeout(showNextStep, 2000);
+            } else {
+                setTimeout(() => {
+                    setFeedback("Et voilà ! Compte tes doigts : 10 doigts = 10 chiffres ! Tu as compris maintenant ? 😊");
+                    setTimeout(() => {
+                        setFeedback("Donc en tout, nous avons bien 10 chiffres différents ! 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 !");
+                        setTimeout(() => {
+                            setFeedback("Le ZÉRO est un peu particulier... on l'oublie parfois, mais il est AUSSI important que les autres !");
+                            setTimeout(() => {
+                                set({ phase: 'intro-second-column', introDigitsAttempt: 0 });
+                                get().updateInstruction();
+                            }, FEEDBACK_DELAY);
+                        }, FEEDBACK_DELAY);
+                    }, FEEDBACK_DELAY);
+                }, 2000);
+            }
+        };
+        
+        showNextStep();
+    },
+
+    handleIntroSecondColumnChoice: (choice: string) => {
+        const { sequenceFeedback } = get();
+        
+        if (choice === 'ajouter-rouleau' || choice === 'plus-grande') {
+            sequenceFeedback(
+                "EXACTEMENT ! Quelle bonne idée ! 💡",
+                "On va ajouter un DEUXIÈME ROULEAU ! Comme ça on aura plus de place pour compter !"
+            );
+        } else {
+            sequenceFeedback(
+                "Pas de souci ! Je vais te montrer MON idée ! 😊",
+                "On va ajouter un DEUXIÈME ROULEAU !"
+            );
+        }
+        
+        setTimeout(() => {
+            set({ feedback: "Regarde bien, je vais modifier la machine !" });
+            setTimeout(() => {
+                const newCols = [...initialColumns];
+                newCols[1].unlocked = true;
+                set({ columns: newCols });
+                sequenceFeedback(
+                    "(Bruits : tic tic tic, bzzzz, clic !) Et voilààààà ! 🎉",
+                    "Maintenant il y a DEUX rouleaux ! Je vais l'allumer pour que tu la testes !"
+                );
+                setTimeout(() => {
+                    set({ feedback: "(Bruit d'allumage : bzzzz, ding !)" });
+                    setTimeout(() => {
+                        set({ phase: 'intro-discover-carry' });
+                        get().updateInstruction();
+                    }, FEEDBACK_DELAY);
+                }, FEEDBACK_DELAY * 2);
+            }, FEEDBACK_DELAY);
+        }, FEEDBACK_DELAY * 2);
+    },
+
+    handleIntroMaxSubmit: () => {
+        const { userInput, introMaxAttempt, sequenceFeedback } = get();
+        const answer = parseInt(userInput.trim());
+        const newAttempt = introMaxAttempt + 1;
+        
+        set({ introMaxAttempt: newAttempt, userInput: "" });
+        
+        if (answer === 99) {
+            // Correct answer!
+            sequenceFeedback(
+                "BRAVO ! 🎉🎉🎉 C'est EXACT ! On peut compter jusqu'à 99 !",
+                "Tu as bien réfléchi ! Chaque rouleau peut afficher 9, donc : 9 et 9 = 99 !"
+            );
+            setTimeout(() => {
+                set({ showInputField: false, phase: 'tutorial', introMaxAttempt: 0 });
+                get().updateInstruction();
+            }, FEEDBACK_DELAY * 2);
+        } else if (answer === 100) {
+            if (newAttempt === 1) {
+                sequenceFeedback(
+                    "Hmm... pas tout à fait ! 🤔",
+                    "100 c'est un très bon nombre, mais... malheureusement la machine ne peut pas y arriver pour l'instant !"
+                );
+                setTimeout(() => {
+                    set({ feedback: "Regarde bien les rouleaux... Quel est le PLUS GRAND chiffre sur chaque rouleau ? 🔍 Réessaie !" });
+                }, FEEDBACK_DELAY * 2);
+            } else if (newAttempt === 2) {
+                sequenceFeedback(
+                    "Tu veux que je t'aide à trouver ? 😊",
+                    "On va le découvrir ENSEMBLE ! 🤝"
+                );
+                setTimeout(() => {
+                    get().runIntroMaxGuided();
+                }, FEEDBACK_DELAY * 2);
+            } else {
+                get().runIntroMaxGuided();
+            }
+        } else if (answer < 99) {
+            if (newAttempt === 1) {
+                sequenceFeedback(
+                    "Tu peux aller PLUS HAUT que ça ! 📈",
+                    "Regarde : chaque rouleau peut aller jusqu'à 9 ! Remplis les DEUX rouleaux au maximum !"
+                );
+            } else {
+                sequenceFeedback(
+                    "Tu veux que je t'aide à trouver ? 😊",
+                    "On va le découvrir ENSEMBLE ! 🤝"
+                );
+                setTimeout(() => {
+                    get().runIntroMaxGuided();
+                }, FEEDBACK_DELAY * 2);
+            }
+        } else {
+            if (newAttempt === 1) {
+                sequenceFeedback(
+                    "Woaw, c'est beaucoup ! 😄",
+                    "Mais malheureusement la machine ne peut pas compter aussi haut !"
+                );
+                setTimeout(() => {
+                    set({ feedback: "Regarde bien : combien de rouleaux il y a ? 👀 Seulement 2 ! Et chaque rouleau va jusqu'à 9 ! Réessaie !" });
+                }, FEEDBACK_DELAY * 2);
+            } else {
+                get().runIntroMaxGuided();
+            }
+        }
+    },
+
+    runIntroMaxGuided: () => {
+        const { setFeedback, setShowInputField, columns } = get();
+        
+        setShowInputField(false);
+        setFeedback("Clique sur △ pour remplir le PREMIER rouleau au maximum !");
+        
+        const newCols = [...columns];
+        newCols[0].value = 0;
+        newCols[1].value = 0;
+        set({ columns: newCols, introMaxAttempt: -1 }); // -1 indicates guided mode
+    },
+
+    completeIntroMaxGuided: () => {
+        const { sequenceFeedback } = get();
+        
+        sequenceFeedback(
+            "STOP ! Regarde l'écran ! Quel nombre tu vois ? 👀",
+            "C'est 99 ! QUATRE-VINGT-DIX-NEUF ! C'est le MAXIMUM que peut afficher la machine !"
+        );
+        
+        setTimeout(() => {
+            set({ feedback: "Maintenant tu sais la réponse ! 😊" });
+            setTimeout(() => {
+                sequenceFeedback(
+                    "Donc, avec DEUX rouleaux, on peut compter jusqu'à 99 !",
+                    "C'est BEAUCOUP plus que 9 ! On est passé de 9... à 99 ! Ça fait 90 nombres de plus ! 🚀"
+                );
+                setTimeout(() => {
+                    set({ feedback: "Mais... si je veux compter jusqu'à 100 ou plus... il faudra encore modifier la machine ! 🔧 Tu es prêt(e) pour la suite de l'aventure ? 🎉" });
+                    setTimeout(() => {
+                        set({ phase: 'tutorial', introMaxAttempt: 0 });
+                        get().updateInstruction();
+                    }, FEEDBACK_DELAY);
+                }, FEEDBACK_DELAY * 2);
+            }, FEEDBACK_DELAY);
+        }, FEEDBACK_DELAY * 2);
+    },
+
     handleUserInputSubmit: () => {
         const { phase, userInput, sequenceFeedback } = get();
         const answer = parseInt(userInput.trim());
@@ -1002,6 +1426,80 @@ export const useStore = create<MachineState>((set, get) => ({
 
         const isUnitsColumn = (i: number) => i === 0;
 
+        // Handle new intro phases
+        if (phase === 'intro-first-interaction') {
+            if (idx === 0) {
+                get().handleIntroFirstClick();
+            }
+            return;
+        } else if (phase === 'intro-discover-carry') {
+            if (idx === 0) {
+                const newCols = [...columns];
+                newCols[0].value++;
+                
+                // Handle carry
+                if (newCols[0].value > 9) {
+                    newCols[0].value = 0;
+                    newCols[1].value++;
+                    set({ columns: newCols });
+                    
+                    setTimeout(() => {
+                        sequenceFeedback(
+                            "WAOUH ! Tu as vu ça ??? 🤩 C'était MAGIQUE non ?",
+                            "Les 10 lumières ont VOYAGÉ ! Elles se sont regroupées pour devenir UNE seule lumière sur le deuxième rouleau !"
+                        );
+                        setTimeout(() => {
+                            set({ feedback: "C'est comme si... chaque lumière du nouveau rouleau avait 10 petites lumières à l'intérieur ! 🎒 10 petites = 1 grosse ! C'est le SECRET des nombres ! 🔑" });
+                            setTimeout(() => {
+                                set({ feedback: "Maintenant, refais l'inverse ! Clique sur ∇ pour voir ce qu'il se passe !" });
+                            }, FEEDBACK_DELAY);
+                        }, FEEDBACK_DELAY * 2);
+                    }, 500);
+                } else {
+                    set({ columns: newCols });
+                }
+            }
+            return;
+        } else if (phase === 'intro-count-digits') {
+            // During guided counting, allow clicking through the digits
+            if (get().introDigitsAttempt === 0 && idx === 0) {
+                const newCols = [...columns];
+                if (newCols[0].value < 9) {
+                    newCols[0].value++;
+                    set({ columns: newCols });
+                }
+            }
+            return;
+        } else if (phase === 'intro-max-value-question') {
+            // In guided mode for max value
+            if (get().introMaxAttempt === -1 && idx === 0) {
+                const newCols = [...columns];
+                newCols[idx].value++;
+                
+                // Handle carry
+                for (let i = idx; i < newCols.length; i++) {
+                    if (newCols[i].value > 9) {
+                        newCols[i].value = 0;
+                        if (i + 1 < newCols.length) {
+                            newCols[i + 1].value++;
+                        }
+                    }
+                }
+                
+                set({ columns: newCols });
+                
+                // Check if we reached 99
+                if (newCols[0].value === 9 && newCols[1].value === 9) {
+                    setTimeout(() => {
+                        get().completeIntroMaxGuided();
+                    }, 500);
+                } else if (newCols[0].value === 9 && newCols[1].value < 9) {
+                    set({ feedback: "Parfait ! Le premier rouleau est à 9 ! Maintenant clique sur △ du DEUXIÈME rouleau !" });
+                }
+            }
+            return;
+        }
+
         // Handle intro phases
         /**if (phase === 'intro-welcome') {
 
@@ -1684,6 +2182,54 @@ export const useStore = create<MachineState>((set, get) => ({
         if (isCountingAutomatically) return;
 
         const isUnitsColumn = (i: number) => i === 0;
+
+        // Handle new intro phases
+        if (phase === 'intro-discover-carry') {
+            if (idx === 0 && columns[0].value === 0 && columns[1].value > 0) {
+                // Borrow from tens
+                const newCols = [...columns];
+                newCols[1].value--;
+                newCols[0].value = 9;
+                set({ columns: newCols });
+                
+                setTimeout(() => {
+                    sequenceFeedback(
+                        "Tu as vu ? La GROSSE lumière est redevenue 10 PETITES !",
+                        "C'est INCROYABLE ! 🎪 Refais l'aller-retour plusieurs fois pour bien comprendre !"
+                    );
+                    setTimeout(() => {
+                        set({ feedback: "Alors, tu as compris le truc ? 😊 Continue à explorer !" });
+                        setTimeout(() => {
+                            set({ showInputField: true, phase: 'intro-count-digits' });
+                            get().updateInstruction();
+                        }, FEEDBACK_DELAY * 2);
+                    }, FEEDBACK_DELAY);
+                }, 500);
+                return;
+            } else if (idx === 0 && columns[0].value > 0) {
+                const newCols = [...columns];
+                newCols[0].value--;
+                set({ columns: newCols });
+                return;
+            }
+            return;
+        } else if (phase === 'intro-first-interaction') {
+            // Allow decrementing during first interaction
+            if (idx === 0 && columns[0].value > 0) {
+                const newCols = [...columns];
+                newCols[0].value--;
+                set({ columns: newCols });
+                
+                if (get().introClickCount === 9 && columns[0].value > 0) {
+                    set({ feedback: "Le bouton ROUGE enlève les lumières ! △ ajoute, ∇ enlève ! C'est simple ! 😊" });
+                    setTimeout(() => {
+                        set({ showInputField: true, phase: 'intro-count-digits' });
+                        get().updateInstruction();
+                    }, 2000);
+                }
+            }
+            return;
+        }
 
         const isAllowedColumn = () => {
             if (phase === 'normal') return true;
@@ -2645,6 +3191,50 @@ export const useStore = create<MachineState>((set, get) => ({
 
         switch (phase) {
             // ... (cases from your existing updateInstruction)
+            case 'intro-welcome-personalized':
+                newInstruction = "Bonjour ! Bienvenue dans mon atelier ! 👋 Comment tu t'appelles ? (Tu peux aussi sauter cette étape)";
+                break;
+            case 'intro-discover-machine':
+                newInstruction = `Oh, tu es là ${get().userName || 'l\'enfant'} ? Je ne t'avais pas entendu arriver avec tout ce bruit ! J'étais justement en train de terminer cette invention... qui va nous permettre de compter toutes sortes de choses ! Tu es prêt(e) à la découvrir ? Tadaaaaa ! 🎉 Comment tu la trouves ?`;
+                break;
+            case 'intro-first-interaction':
+                if (get().introClickCount === 0) {
+                    newInstruction = "Bon, elle peut paraître un peu compliquée comme ça... mais elle n'aura bientôt plus de secrets pour toi ! Grâce à cette machine bizarre, nous allons comprendre comment fonctionnent les nombres ! Et hop, je vais la mettre en route ! (Animation + bruit d'allumage : bzzzz, clic, ding !) Maintenant tu peux appuyer sur ses boutons ! Clique sur le bouton △ VERT pour voir ce qu'il se passe !";
+                } else if (get().introClickCount < 9) {
+                    newInstruction = `Continue à cliquer sur △ pour remplir la machine !`;
+                } else {
+                    newInstruction = "La machine est pleine ! Essaie maintenant le bouton ROUGE ∇ pour voir ce qu'il fait !";
+                }
+                break;
+            case 'intro-count-digits':
+                newInstruction = "Maintenant, une petite question pour voir si tu as bien regardé ! 🤔 Te rappelles-tu combien de chiffres DIFFÉRENTS tu as vu ? Prends ton temps pour réfléchir... 🤔";
+                break;
+            case 'intro-second-column':
+                newInstruction = "Bon, tout ça c'est très bien... Mais j'ai un PROBLÈME ! 🤔 Comment va-t-on faire pour compter plus haut que 9 ? Pour l'instant, la machine BLOQUE à 9 ! Tu vois ? Ça ne bouge plus ! 😅 À ton avis, que peut-on faire ?";
+                break;
+            case 'intro-discover-carry':
+                if (get().columns[0].value < 9) {
+                    newInstruction = "Maintenant, on va voir quelque chose de MAGIQUE ! ✨ Amène le premier rouleau à 9 !";
+                } else if (get().columns[0].value === 9 && get().columns[1].value === 0) {
+                    newInstruction = "Parfait ! Tout est PLEIN ! 9 lumières allumées ! Maintenant... que va-t-il se passer si tu cliques encore une fois sur △ ? Réfléchis bien... 🤔 Tu ne sais pas ? C'est normal ! Clique et tu verras ! 😊";
+                } else {
+                    newInstruction = "WAOUH ! Tu as vu ça ??? 🤩 C'était MAGIQUE non ? Les 10 lumières ont VOYAGÉ ! Elles se sont regroupées pour devenir UNE seule lumière sur le deuxième rouleau ! Maintenant, refais l'inverse ! Clique sur ∇ pour voir ce qu'il se passe !";
+                }
+                break;
+            case 'intro-max-value-question':
+                if (get().introMaxAttempt === -1) {
+                    // Guided mode
+                    if (get().columns[0].value < 9) {
+                        newInstruction = "Clique sur △ pour remplir le PREMIER rouleau au maximum !";
+                    } else if (get().columns[1].value < 9) {
+                        newInstruction = "Parfait ! Maintenant clique sur △ du DEUXIÈME rouleau pour le remplir aussi !";
+                    } else {
+                        newInstruction = "C'est le MAXIMUM ! 99 !";
+                    }
+                } else {
+                    newInstruction = "Maintenant que tu as vu comment ça marche... J'ai une question pour toi ! 🎯 Avec DEUX rouleaux, jusqu'à combien peut-on compter ? Réfléchis bien ! 🤔";
+                }
+                break;
             case 'intro-welcome':
                 newInstruction = "Paf, Crac… Bim… Tchac ! Quel vacarme ! Voilà, j'ai terminé ma nouvelle machine !";
                 break;
