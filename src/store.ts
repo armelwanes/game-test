@@ -2318,7 +2318,7 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateThousandToTwoThousand: () => {
-        const { phase, columns, thousandToTwoThousandTargetIndex, thousandToTwoThousandSuccessCount, sequenceFeedback } = get();
+        const { phase, columns, thousandToTwoThousandTargetIndex, thousandToTwoThousandSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-thousand-to-two-thousand') return;
@@ -2327,6 +2327,15 @@ export const useStore = create<MachineState>((set, get) => ({
         const targetNumber = challenge.targets[thousandToTwoThousandTargetIndex];
 
         if (totalNumber === targetNumber) {
+            // SUCCESS!
+            const successMsg = getSuccessMessage(attemptCount + 1, false);
+            get().setFeedback(successMsg);
+            
+            // Reset attempts and update stats
+            resetAttempts();
+            setConsecutiveFailures(0);
+            setTotalChallengesCompleted(totalChallengesCompleted + 1);
+            
             const newSuccessCount = thousandToTwoThousandSuccessCount + 1;
             set({ thousandToTwoThousandSuccessCount: newSuccessCount });
 
@@ -2355,12 +2364,42 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback(`✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`, `Maintenant affiche **${nextTarget}** !`);
             }
         } else {
-            get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
+            // FAILURE - Generate progressive feedback
+            const newAttemptCount = attemptCount + 1;
+            setAttemptCount(newAttemptCount);
+            
+            const feedbackMsg = generateFeedback({
+                attemptCount: newAttemptCount,
+                consecutiveFailures,
+                frustrationLevel: detectFrustration(consecutiveFailures),
+                currentTarget: targetNumber,
+                lastUserAnswer: totalNumber
+            });
+            
+            get().setFeedback(feedbackMsg.message);
+            
+            // Show help options on 4th attempt
+            if (feedbackMsg.showHelp) {
+                setShowHelpOptions(true);
+            }
+            
+            // If too many attempts, increase consecutive failures
+            if (newAttemptCount >= 4) {
+                const newConsecutiveFailures = consecutiveFailures + 1;
+                setConsecutiveFailures(newConsecutiveFailures);
+                
+                // Check for high frustration
+                if (newConsecutiveFailures >= 3) {
+                    setTimeout(() => {
+                        get().setFeedback(getFrustrationInterventionMessage());
+                    }, FEEDBACK_DELAY * 2);
+                }
+            }
         }
     },
 
     handleValidateTwoThousandToThreeThousand: () => {
-        const { phase, columns, twoThousandToThreeThousandTargetIndex, twoThousandToThreeThousandSuccessCount, sequenceFeedback } = get();
+        const { phase, columns, twoThousandToThreeThousandTargetIndex, twoThousandToThreeThousandSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-two-thousand-to-three-thousand') return;
@@ -2369,6 +2408,15 @@ export const useStore = create<MachineState>((set, get) => ({
         const targetNumber = challenge.targets[twoThousandToThreeThousandTargetIndex];
 
         if (totalNumber === targetNumber) {
+            // SUCCESS!
+            const successMsg = getSuccessMessage(attemptCount + 1, false);
+            get().setFeedback(successMsg);
+            
+            // Reset attempts and update stats
+            resetAttempts();
+            setConsecutiveFailures(0);
+            setTotalChallengesCompleted(totalChallengesCompleted + 1);
+            
             const newSuccessCount = twoThousandToThreeThousandSuccessCount + 1;
             set({ twoThousandToThreeThousandSuccessCount: newSuccessCount });
 
@@ -2393,12 +2441,42 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback(`✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`, `Maintenant affiche **${nextTarget}** !`);
             }
         } else {
-            get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
+            // FAILURE - Generate progressive feedback
+            const newAttemptCount = attemptCount + 1;
+            setAttemptCount(newAttemptCount);
+            
+            const feedbackMsg = generateFeedback({
+                attemptCount: newAttemptCount,
+                consecutiveFailures,
+                frustrationLevel: detectFrustration(consecutiveFailures),
+                currentTarget: targetNumber,
+                lastUserAnswer: totalNumber
+            });
+            
+            get().setFeedback(feedbackMsg.message);
+            
+            // Show help options on 4th attempt
+            if (feedbackMsg.showHelp) {
+                setShowHelpOptions(true);
+            }
+            
+            // If too many attempts, increase consecutive failures
+            if (newAttemptCount >= 4) {
+                const newConsecutiveFailures = consecutiveFailures + 1;
+                setConsecutiveFailures(newConsecutiveFailures);
+                
+                // Check for high frustration
+                if (newConsecutiveFailures >= 3) {
+                    setTimeout(() => {
+                        get().setFeedback(getFrustrationInterventionMessage());
+                    }, FEEDBACK_DELAY * 2);
+                }
+            }
         }
     },
 
     handleValidateThousandsSimpleCombination: () => {
-        const { phase, columns, thousandsSimpleCombinationTargetIndex, thousandsSimpleCombinationSuccessCount, sequenceFeedback } = get();
+        const { phase, columns, thousandsSimpleCombinationTargetIndex, thousandsSimpleCombinationSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-thousands-simple-combination') return;
@@ -2407,6 +2485,15 @@ export const useStore = create<MachineState>((set, get) => ({
         const targetNumber = challenge.targets[thousandsSimpleCombinationTargetIndex];
 
         if (totalNumber === targetNumber) {
+            // SUCCESS!
+            const successMsg = getSuccessMessage(attemptCount + 1, false);
+            get().setFeedback(successMsg);
+            
+            // Reset attempts and update stats
+            resetAttempts();
+            setConsecutiveFailures(0);
+            setTotalChallengesCompleted(totalChallengesCompleted + 1);
+            
             const newSuccessCount = thousandsSimpleCombinationSuccessCount + 1;
             set({ thousandsSimpleCombinationSuccessCount: newSuccessCount });
 
@@ -2431,7 +2518,37 @@ export const useStore = create<MachineState>((set, get) => ({
                 sequenceFeedback(`✅ Correct ! ${newSuccessCount}/${challenge.targets.length} réussis !`, `Maintenant affiche **${nextTarget}** !`);
             }
         } else {
-            get().setFeedback(`Pas encore ! Il faut ${targetNumber}. Réessaie avec △ et ∇ !`);
+            // FAILURE - Generate progressive feedback
+            const newAttemptCount = attemptCount + 1;
+            setAttemptCount(newAttemptCount);
+            
+            const feedbackMsg = generateFeedback({
+                attemptCount: newAttemptCount,
+                consecutiveFailures,
+                frustrationLevel: detectFrustration(consecutiveFailures),
+                currentTarget: targetNumber,
+                lastUserAnswer: totalNumber
+            });
+            
+            get().setFeedback(feedbackMsg.message);
+            
+            // Show help options on 4th attempt
+            if (feedbackMsg.showHelp) {
+                setShowHelpOptions(true);
+            }
+            
+            // If too many attempts, increase consecutive failures
+            if (newAttemptCount >= 4) {
+                const newConsecutiveFailures = consecutiveFailures + 1;
+                setConsecutiveFailures(newConsecutiveFailures);
+                
+                // Check for high frustration
+                if (newConsecutiveFailures >= 3) {
+                    setTimeout(() => {
+                        get().setFeedback(getFrustrationInterventionMessage());
+                    }, FEEDBACK_DELAY * 2);
+                }
+            }
         }
     },
 
