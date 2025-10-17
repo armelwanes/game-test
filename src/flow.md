@@ -7,33 +7,62 @@ Voici le diagramme de flux complet de toutes les phases du jeu éducatif :
 DÉMARRAGE DU JEU
          ↓
 ┌────────────────────────────────────────────────────────────────┐
-│                    SECTION 1 : INTRODUCTION                     │
+│             SECTION 1 : INTRODUCTION AMÉLIORÉE                  │
 └────────────────────────────────────────────────────────────────┘
          ↓
-    [intro-welcome]
-    "Bruits de marteau... j'ai terminé ma machine !"
-    🎯 Action : L'utilisateur clique sur △ ou ∇
+    [intro-welcome-personalized]
+    "Bonjour ! Comment tu t'appelles ?"
+    🎯 Action : Saisie optionnelle du prénom
          ↓
-    [intro-discover]
-    "Oh tu es là ? Cette machine va nous permettre de compter"
-    🎯 Action : L'utilisateur clique sur △
+    "(Bruits de marteau...) Voilà, j'ai terminé ma nouvelle machine !"
          ↓
-    Comptage de 0 à 9 dans la colonne Unités
-    🎯 Action : L'utilisateur atteint 9
+    [intro-discover-machine]
+    "Comment tu la trouves ?"
+    🎯 Action : Choix parmi 4 réponses + timeout 10s
+    - "Trop belle ! ✨"
+    - "Bof... 😐"
+    - "J'y comprends rien ! 🤔"
+    - "C'est quoi ? 🧐"
          ↓
-    [intro-question-digits]
+    [intro-first-interaction]
+    "Clique sur △ VERT pour voir ce qu'il se passe !"
+    🎯 Action : Cliquer sur △ pour compter de 0→9
+    - Feedback à chaque clic (1, 2, 3... 9 STOP !)
+    - Guidage progressif si pas de clic (5s, 10s)
+         ↓
+    "Essaie le bouton ROUGE ∇ maintenant !"
+    🎯 Action : Décrémenter pour comprendre ∇
+         ↓
+    [intro-count-digits]
     "Combien de chiffres différents as-tu vu ?"
-    🎯 Action : L'utilisateur saisit sa réponse (attendu: 10)
+    🎯 Action : Saisie avec système à 3 tentatives
+    - Tentative 1 : Encouragement simple
+    - Tentative 2 : Indice visuel (affichage 0-9)
+    - Tentative 3 : Comptage guidé avec doigts
+    - Réponse attendue : 10 (avec aide pour le zéro)
          ↓
-    [intro-add-roll]
+    [intro-second-column]
     "Comment compter plus haut que 9 ?"
-    🎯 Action : L'utilisateur clique sur △ jusqu'à 9
+    🎯 Action : Choix de solution
+    - "Ajouter un rouleau ! 🎡"
+    - "Faire une plus grande machine ! 📏"
+    - "Je ne sais pas ! 🤷"
+    → Déblocage de la colonne Dizaines
          ↓
-    Déblocage de la colonne Dizaines (retenue 9→10)
+    [intro-discover-carry]
+    "Amène le premier rouleau à 9 puis clique sur △"
+    🎯 Action : Découverte interactive 9→10
+    - Animation de transformation magique
+    - Exploration libre aller-retour
+    - "10 petites = 1 grosse !"
          ↓
-    [intro-question-max]
-    "Jusqu'à combien peut-on compter avec 2 rouleaux ?"
-    🎯 Action : L'utilisateur saisit sa réponse (attendu: 99)
+    [intro-max-value-question]
+    "Avec 2 rouleaux, jusqu'à combien peut-on compter ?"
+    🎯 Action : Saisie avec système à 3 tentatives
+    - Tentative 1 : Encouragement selon réponse
+    - Tentative 2 : Exploration guidée ou nouvel essai
+    - Tentative 3 : Démonstration visuelle (remplissage à 99)
+    - Réponse attendue : 99
          ↓
 ┌────────────────────────────────────────────────────────────────┐
 │                    SECTION 2 : TUTORIEL                         │
@@ -345,25 +374,27 @@ challenge-tens-3        challenge-hund-3    challenge-thou-3
 
 | Section | Durée estimée |
 |---------|---------------|
-| Introduction | 2-3 minutes |
+| Introduction améliorée | 10-15 minutes |
 | Tutoriel | 1-2 minutes |
 | Unités (apprentissage + défis) | 5-7 minutes |
 | Dizaines (apprentissage + défis) | 5-7 minutes |
 | Centaines (apprentissage + défis) | 5-7 minutes |
 | Milliers (apprentissage + défis) | 5-7 minutes |
 
-**TOTAL : 25-35 minutes** pour compléter tout l'apprentissage guidé 🎓
+**TOTAL : 32-45 minutes** pour compléter tout l'apprentissage guidé 🎓
 
 ---
 
 ## 📋 Liste complète des phases
 
-### Introduction (5 phases)
-1. `intro-welcome` - Message de bienvenue
-2. `intro-discover` - Découverte de la machine
-3. `intro-question-digits` - Question sur les chiffres
-4. `intro-add-roll` - Besoin d'une colonne supplémentaire
-5. `intro-question-max` - Question sur le maximum
+### Introduction (7 phases améliorées)
+1. `intro-welcome-personalized` - Accueil personnalisé avec saisie du prénom
+2. `intro-discover-machine` - Découverte de la machine avec 4 choix de réponses
+3. `intro-first-interaction` - Première manipulation guidée (0→9→0)
+4. `intro-count-digits` - Question sur les chiffres (système à 3 tentatives)
+5. `intro-second-column` - Résolution de problème (choix de solution)
+6. `intro-discover-carry` - Découverte interactive de la retenue 9→10
+7. `intro-max-value-question` - Question sur le maximum (système à 3 tentatives)
 
 ### Tutoriel (4 phases)
 6. `tutorial` - Apprentissage des boutons △ et ∇
@@ -402,7 +433,7 @@ challenge-tens-3        challenge-hund-3    challenge-thou-3
 ### Mode libre (1 phase)
 30. `normal` - Exploration libre jusqu'à 9999
 
-**TOTAL : 30 phases distinctes** 🎮
+**TOTAL : 32 phases distinctes** 🎮 (7 intro + 4 tutorial + 5 units + 5 tens + 5 hundreds + 5 thousands + 1 normal)
 
 ---
 
@@ -417,5 +448,82 @@ Le jeu suit une approche pédagogique en spirale :
 5. **Transition** : Apprentissage du concept suivant
 
 Chaque niveau (unités, dizaines, centaines, milliers) suit ce même schéma, permettant une consolidation progressive des acquis. 📚✨
+
+---
+
+## 🎨 AMÉLIORATION DE L'INTRODUCTION (Nouvelle Version)
+
+La séquence d'introduction a été entièrement repensée pour offrir une expérience plus engageante et personnalisée.
+
+### ✨ Nouvelles Fonctionnalités
+
+#### 1. **Personnalisation** (Phase 0)
+- Saisie optionnelle du prénom de l'enfant
+- Utilisation du prénom tout au long de l'expérience
+- Message de bienvenue chaleureux et inclusif
+
+#### 2. **Choix de Réponses** (Phase 1)
+- 4 options de réponse pour exprimer son ressenti
+- Réponses adaptées à chaque choix
+- Timeout automatique après 10 secondes si pas de réponse
+- Validation de toutes les émotions de l'enfant
+
+#### 3. **Guidage Progressif** (Phase 2)
+- Feedback immédiat à chaque clic
+- Aide progressive si l'enfant ne clique pas (5s, 10s)
+- Animation et pointage vers le bon bouton
+- Encouragements spécifiques à chaque étape (1, 2, 3... 9)
+
+#### 4. **Système à 3 Tentatives** (Phases 3 et 6)
+
+**Tentative 1** : Encouragement simple
+- Feedback positif et constructif
+- Indice subtil pour guider la réflexion
+
+**Tentative 2** : Aide visuelle
+- Affichage séquentiel des éléments
+- Possibilité de compter visuellement
+- Explication plus détaillée
+
+**Tentative 3** : Guidage complet
+- Comptage guidé avec animations
+- Utilisation des doigts comme référence
+- Démonstration visuelle complète
+- **Jamais de situation d'échec**
+
+#### 5. **Résolution de Problème** (Phase 4)
+- Implication de l'enfant dans la solution
+- Choix entre différentes approches
+- Valorisation de toutes les réponses
+- Encouragement de la créativité
+
+#### 6. **Exploration Interactive** (Phase 5)
+- Découverte active de la retenue 9→10
+- Animation "magique" de transformation
+- Exploration libre aller-retour
+- Ancrage du concept "10 petites = 1 grosse"
+
+### 📈 Améliorations Pédagogiques
+
+| Aspect | Avant | Après |
+|--------|-------|-------|
+| **Personnalisation** | Aucune | Prénom utilisé partout |
+| **Choix de réponses** | 3 options fixes | 4-5 options + timeout |
+| **Aide progressive** | Non | Oui (3 niveaux) |
+| **Manipulation active** | Minimale | Maximale |
+| **Feedback adaptatif** | Générique | Selon réponse précise |
+| **Guidage si bloqué** | Non | Oui (animations, pointage) |
+| **Exploration libre** | Non | Oui (phase découverte) |
+| **Durée** | ~5 min | ~10-15 min |
+| **Engagement** | Passif | Actif |
+
+### 🎯 Objectifs Atteints
+
+1. ✅ **Zéro abandon** : L'enfant ne peut pas rester bloqué
+2. ✅ **Confiance en soi** : Toujours valorisé, jamais en échec
+3. ✅ **Compréhension profonde** : Manipulation + exploration = meilleur ancrage
+4. ✅ **Engagement maximal** : L'enfant est acteur, pas spectateur
+5. ✅ **Plaisir** : Moments "magiques", surprises, découvertes
+6. ✅ **Adaptabilité** : S'adapte au rythme et aux réponses de l'enfant
 
 ---
