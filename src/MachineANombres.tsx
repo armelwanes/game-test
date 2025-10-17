@@ -45,6 +45,9 @@ function MachineANombres() {
     showValidateThousandsButton,
     setUserInput,
     handleUserInputSubmit,
+    attemptCount,
+    showHelpOptions,
+    totalChallengesCompleted,
   } = useStore();
 
   // Local typing animation state
@@ -725,6 +728,150 @@ function MachineANombres() {
             {totalNumber.toString().padStart(4, '0')}
           </div>
         </div>
+
+        {/* Attempt indicator for challenges */}
+        {(showValidateLearningButton || showValidateTensButton || showValidateHundredsButton || showValidateThousandsButton) && attemptCount > 0 && (
+          <div style={{
+            marginTop: 12,
+            padding: '8px 12px',
+            background: attemptCount === 1 ? '#dbeafe' : attemptCount === 2 ? '#fef3c7' : attemptCount === 3 ? '#fed7aa' : '#fee2e2',
+            borderRadius: 6,
+            textAlign: 'center',
+            fontSize: 13,
+            fontWeight: 'bold',
+            color: attemptCount === 1 ? '#1e40af' : attemptCount === 2 ? '#92400e' : attemptCount === 3 ? '#9a3412' : '#991b1b'
+          }}>
+            {attemptCount === 1 && '⭐ Essai 1/4'}
+            {attemptCount === 2 && '💪 Essai 2/4 - Tu peux le faire !'}
+            {attemptCount === 3 && '💡 Essai 3/4 - Voici des indices !'}
+            {attemptCount >= 4 && '🤝 Besoin d\'aide ?'}
+          </div>
+        )}
+
+        {/* Help options when user has tried 4+ times */}
+        {showHelpOptions && (
+          <div style={{
+            marginTop: 16,
+            padding: '16px',
+            background: '#fef3c7',
+            borderRadius: 8,
+            border: '2px solid #fbbf24'
+          }}>
+            <p style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 'bold', color: '#92400e', textAlign: 'center' }}>
+              Choisis comment tu veux continuer :
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button
+                onClick={() => {
+                  useStore.getState().setShowHelpOptions(false);
+                  useStore.getState().setFeedback("D'accord champion ! Dernier essai ! 🎯 Rappelle-toi les indices !");
+                }}
+                style={{
+                  fontSize: 14,
+                  padding: '10px 16px',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)'
+                }}
+              >
+                💪 Essayer encore tout seul !
+              </button>
+              <button
+                onClick={() => {
+                  useStore.getState().setShowHelpOptions(false);
+                  useStore.getState().setGuidedMode(true);
+                  useStore.getState().setGuidedStep(0);
+                  useStore.getState().setFeedback("Super ! Je vais t'aider colonne par colonne ! 🤝 Commence par les MILLIERS...");
+                }}
+                style={{
+                  fontSize: 14,
+                  padding: '10px 16px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)'
+                }}
+              >
+                🤝 Aide-moi à le faire !
+              </button>
+              <button
+                onClick={() => {
+                  const { columns } = useStore.getState();
+                  let targetNumber = 0;
+                  
+                  // Get the current target based on phase
+                  if (phase.startsWith('challenge-unit-')) {
+                    const challengeIndex = ['challenge-unit-1', 'challenge-unit-2', 'challenge-unit-3'].indexOf(phase);
+                    targetNumber = UNIT_CHALLENGES[challengeIndex].targets[unitTargetIndex];
+                  } else if (phase.startsWith('challenge-tens-')) {
+                    const challengeIndex = ['challenge-tens-1', 'challenge-tens-2', 'challenge-tens-3'].indexOf(phase);
+                    targetNumber = TENS_CHALLENGES[challengeIndex].targets[tensTargetIndex];
+                  } else if (phase.startsWith('challenge-hundreds-')) {
+                    const challengeIndex = ['challenge-hundreds-1', 'challenge-hundreds-2', 'challenge-hundreds-3'].indexOf(phase);
+                    targetNumber = HUNDREDS_CHALLENGES[challengeIndex].targets[hundredsTargetIndex];
+                  } else if (phase.startsWith('challenge-thousands-')) {
+                    const challengeIndex = ['challenge-thousands-1', 'challenge-thousands-2', 'challenge-thousands-3'].indexOf(phase);
+                    targetNumber = THOUSANDS_CHALLENGES[challengeIndex].targets[thousandsTargetIndex];
+                  }
+                  
+                  // Decompose and show
+                  const thousands = Math.floor(targetNumber / 1000);
+                  const hundreds = Math.floor((targetNumber % 1000) / 100);
+                  const tens = Math.floor((targetNumber % 100) / 10);
+                  const units = targetNumber % 10;
+                  
+                  // Build the new columns with the target values
+                  const newCols = [...columns];
+                  newCols[3].value = thousands;
+                  newCols[2].value = hundreds;
+                  newCols[1].value = tens;
+                  newCols[0].value = units;
+                  
+                  useStore.getState().setColumns(newCols);
+                  useStore.getState().setShowHelpOptions(false);
+                  useStore.getState().setFeedback(`Voilà ! C'est comme ça qu'on fait ${targetNumber} ! 🎯 Observe bien ! Maintenant tu sais ! 👀`);
+                }}
+                style={{
+                  fontSize: 14,
+                  padding: '10px 16px',
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  boxShadow: '0 2px 4px rgba(139, 92, 246, 0.3)'
+                }}
+              >
+                👀 Montre-moi la solution !
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Progress tracker showing total challenges completed */}
+        {totalChallengesCompleted > 0 && (
+          <div style={{
+            marginTop: 12,
+            padding: '8px 12px',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            borderRadius: 6,
+            textAlign: 'center',
+            fontSize: 13,
+            fontWeight: 'bold',
+            color: '#fff',
+            boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)'
+          }}>
+            🌟 {totalChallengesCompleted} défi{totalChallengesCompleted > 1 ? 's' : ''} réussi{totalChallengesCompleted > 1 ? 's' : ''} ! Continue ! 💪
+          </div>
+        )}
       </div>
 
       {/* Assistant pédagogique */}
