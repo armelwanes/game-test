@@ -40,11 +40,23 @@ export type Phase =
     | 'challenge-hundreds-1'
     | 'challenge-hundreds-2'
     | 'challenge-hundreds-3'
+    | 'celebration-before-thousands'
+    | 'practice-thousand'
+    | 'learn-thousand-to-thousand-ten'
+    | 'learn-thousand-to-thousand-hundred'
+    | 'learn-thousand-hundred-to-two-thousand'
+    | 'challenge-thousand-to-two-thousand'
+    | 'learn-two-thousand-to-three-thousand'
+    | 'challenge-two-thousand-to-three-thousand'
     | 'learn-thousands'
+    | 'learn-thousands-very-simple-combination'
+    | 'challenge-thousands-simple-combination'
+    | 'learn-thousands-full-combination'
     | 'learn-thousands-combination'
     | 'challenge-thousands-1'
     | 'challenge-thousands-2'
     | 'challenge-thousands-3'
+    | 'celebration-thousands-complete'
     | 'normal'
     | 'done'
     | 'learn-units';
@@ -86,10 +98,22 @@ export const HUNDREDS_CHALLENGES: Challenge[] = [
   { phase: 'challenge-hundreds-3', targets: [123, 267, 389, 456, 598] }  // Difficile
 ];
 
+export const THOUSAND_TO_TWO_THOUSAND_CHALLENGES: Challenge[] = [
+  { phase: 'challenge-thousand-to-two-thousand', targets: [1001, 1005, 1010, 1050, 1100, 1500, 1230] }
+];
+
+export const TWO_THOUSAND_TO_THREE_THOUSAND_CHALLENGES: Challenge[] = [
+  { phase: 'challenge-two-thousand-to-three-thousand', targets: [2000, 2100, 2500, 2900] }
+];
+
+export const THOUSANDS_SIMPLE_COMBINATION_CHALLENGES: Challenge[] = [
+  { phase: 'challenge-thousands-simple-combination', targets: [1000, 2000, 3500, 5000, 7100] }
+];
+
 export const THOUSANDS_CHALLENGES: Challenge[] = [
-  { phase: 'challenge-thousands-1', targets: [1234, 5678] },
-  { phase: 'challenge-thousands-2', targets: [2345, 6789, 3210, 7890] },
-  { phase: 'challenge-thousands-3', targets: [1456, 2789, 3921, 5147, 6372, 8519] }
+  { phase: 'challenge-thousands-1', targets: [1000, 2000, 3000, 1100, 2500, 1010, 2020] }, // Facile
+  { phase: 'challenge-thousands-2', targets: [1234, 2345, 3456, 1500, 2750, 4321, 5678] }, // Moyen
+  { phase: 'challenge-thousands-3', targets: [1999, 2468, 3579, 5432, 6789, 7890, 8765] }  // Difficile
 ];
 
 export interface MachineState {
@@ -123,6 +147,13 @@ export interface MachineState {
     hundredToTwoHundredSuccessCount: number;
     twoHundredToThreeHundredTargetIndex: number;
     twoHundredToThreeHundredSuccessCount: number;
+    practiceThousandCount: number;
+    thousandToTwoThousandTargetIndex: number;
+    thousandToTwoThousandSuccessCount: number;
+    twoThousandToThreeThousandTargetIndex: number;
+    twoThousandToThreeThousandSuccessCount: number;
+    thousandsSimpleCombinationTargetIndex: number;
+    thousandsSimpleCombinationSuccessCount: number;
     timer: number | null;
 
   userInput: string;
@@ -166,6 +197,13 @@ export interface MachineState {
     setHundredToTwoHundredSuccessCount: (count: number) => void;
     setTwoHundredToThreeHundredTargetIndex: (index: number) => void;
     setTwoHundredToThreeHundredSuccessCount: (count: number) => void;
+    setPracticeThousandCount: (count: number) => void;
+    setThousandToTwoThousandTargetIndex: (index: number) => void;
+    setThousandToTwoThousandSuccessCount: (count: number) => void;
+    setTwoThousandToThreeThousandTargetIndex: (index: number) => void;
+    setTwoThousandToThreeThousandSuccessCount: (count: number) => void;
+    setThousandsSimpleCombinationTargetIndex: (index: number) => void;
+    setThousandsSimpleCombinationSuccessCount: (count: number) => void;
     resetUnitChallenge: () => void;
     resetTensChallenge: () => void;
     resetHundredsChallenge: () => void;
@@ -173,6 +211,9 @@ export interface MachineState {
     resetTenToTwentyChallenge: () => void;
     resetHundredToTwoHundredChallenge: () => void;
     resetTwoHundredToThreeHundredChallenge: () => void;
+    resetThousandToTwoThousandChallenge: () => void;
+    resetTwoThousandToThreeThousandChallenge: () => void;
+    resetThousandsSimpleCombinationChallenge: () => void;
     updateInstruction: () => void;
     runAutoCount: () => void;
     updateButtonVisibility: () => void;
@@ -192,6 +233,9 @@ export interface MachineState {
     handleValidateTwoHundredToThreeHundred: () => void;
     handleValidateHundreds: () => void;
     handleValidateThousands: () => void;
+    handleValidateThousandToTwoThousand: () => void;
+    handleValidateTwoThousandToThreeThousand: () => void;
+    handleValidateThousandsSimpleCombination: () => void;
     startLearningPhase: () => void;
     unlockNextColumn: () => void;
     init: () => void;
