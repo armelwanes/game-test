@@ -20,7 +20,11 @@ import {
     generateFeedback,
     getSuccessMessage,
     detectFrustration,
-    getFrustrationInterventionMessage
+    getFrustrationInterventionMessage,
+    decomposeNumber,
+    getNextGuidedStep,
+    getGuidedCompletionMessage,
+    getSolutionAnimationStep
 } from './feedbackSystem.ts';
 
 export const initialColumns: Column[] = [
@@ -80,6 +84,11 @@ export const useStore = create<MachineState>((set, get) => ({
     guidedMode: false,
     guidedStep: 0,
     totalChallengesCompleted: 0,
+    helpChoice: null,
+    showSolutionAnimation: false,
+    solutionAnimationStep: 0,
+    currentTarget: 0,
+    lastFeedbackMessage: '',
 
     // Personalization and intro state
     userName: "",
@@ -307,7 +316,20 @@ export const useStore = create<MachineState>((set, get) => ({
     setGuidedMode: (guided) => set({ guidedMode: guided }),
     setGuidedStep: (step) => set({ guidedStep: step }),
     setTotalChallengesCompleted: (count) => set({ totalChallengesCompleted: count }),
-    resetAttempts: () => set({ attemptCount: 0, showHelpOptions: false, guidedMode: false, guidedStep: 0 }),
+    setHelpChoice: (choice) => set({ helpChoice: choice }),
+    setShowSolutionAnimation: (show) => set({ showSolutionAnimation: show }),
+    setSolutionAnimationStep: (step) => set({ solutionAnimationStep: step }),
+    setCurrentTarget: (target) => set({ currentTarget: target }),
+    setLastFeedbackMessage: (message) => set({ lastFeedbackMessage: message }),
+    resetAttempts: () => set({ 
+        attemptCount: 0, 
+        showHelpOptions: false, 
+        guidedMode: false, 
+        guidedStep: 0,
+        helpChoice: null,
+        showSolutionAnimation: false,
+        solutionAnimationStep: 0
+    }),
     
     // New intro state setters
     setUserName: (name) => set({ userName: name }),
@@ -2352,7 +2374,7 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateLearning: () => {
-        const { phase, columns, unitTargetIndex, unitSuccessCount, sequenceFeedback, resetUnitChallenge, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
+        const { phase, columns, unitTargetIndex, unitSuccessCount, sequenceFeedback, resetUnitChallenge, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted, setCurrentTarget } = get();
         const challengePhases = ['challenge-unit-1', 'challenge-unit-2', 'challenge-unit-3'] as const;
         const challengeIndex = challengePhases.indexOf(phase as typeof challengePhases[number]);
         if (challengeIndex === -1) return;
@@ -2360,6 +2382,9 @@ export const useStore = create<MachineState>((set, get) => ({
         const challenge = UNIT_CHALLENGES[challengeIndex];
         const targetNumber = challenge.targets[unitTargetIndex];
         const currentNumber = columns[0].value;
+        
+        // Set current target for help system
+        setCurrentTarget(targetNumber);
 
         if (currentNumber === targetNumber) {
             // SUCCESS!
@@ -2516,7 +2541,7 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateTens: () => {
-        const { phase, columns, tensTargetIndex, tensSuccessCount, sequenceFeedback, resetTensChallenge, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
+        const { phase, columns, tensTargetIndex, tensSuccessCount, sequenceFeedback, resetTensChallenge, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted, setCurrentTarget } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         const challengePhases = ['challenge-tens-1', 'challenge-tens-2', 'challenge-tens-3'] as const;
         const challengeIndex = challengePhases.indexOf(phase as typeof challengePhases[number]);
@@ -2524,6 +2549,9 @@ export const useStore = create<MachineState>((set, get) => ({
 
         const challenge = TENS_CHALLENGES[challengeIndex];
         const targetNumber = challenge.targets[tensTargetIndex];
+        
+        // Set current target for help system
+        setCurrentTarget(targetNumber);
 
         if (totalNumber === targetNumber) {
             // SUCCESS!
@@ -3515,6 +3543,145 @@ export const useStore = create<MachineState>((set, get) => ({
                 set({ columns: newCols });
                 get().setFeedback(`🔓 Colonne ${newCols[nextIdx].name} débloquée ! Clique sur △ et ∇ pour t'amuser !`);
             }
+        }
+    },
+
+    // Handle help choice in assisted mode (attempt 4+)
+    handleHelpChoice: (choice: 'tryAgain' | 'guided' | 'showSolution') => {
+        const { setHelpChoice, setShowHelpOptions, setGuidedMode, setShowSolutionAnimation, currentTarget, columns } = get();
+        
+        setHelpChoice(choice);
+        setShowHelpOptions(false);
+        
+        if (choice === 'tryAgain') {
+            // Option 1: Try again with all hints visible
+            const decomp = decomposeNumber(currentTarget);
+            get().setFeedback(`D'accord champion ! Dernier essai ! 🎯
+Je laisse TOUS les indices affichés pour t'aider !
+
+RAPPEL : Il faut faire ${currentTarget}
+
+DÉCOMPOSITION :
+${decomp.thousands > 0 ? `- ${decomp.thousands} milliers = ${decomp.thousands * 1000}\n` : ''}${decomp.hundreds > 0 ? `- ${decomp.hundreds} centaines = ${decomp.hundreds * 100}\n` : ''}${decomp.tens > 0 ? `- ${decomp.tens} dizaines = ${decomp.tens * 10}\n` : ''}${decomp.units > 0 ? `- ${decomp.units} unités = ${decomp.units}\n` : ''}
+TOTAL = ${currentTarget}
+
+Tu peux le faire ! Je crois en toi ! ⭐
+Prends ton temps ! Pas de pression ! 😊`);
+        } else if (choice === 'guided') {
+            // Option 2: Guided step-by-step construction
+            setGuidedMode(true);
+            set({ guidedStep: 0 });
+            
+            // Reset all columns to 0
+            const resetCols = columns.map(col => ({ ...col, value: 0 }));
+            set({ columns: resetCols });
+            
+            get().setFeedback(`On va le construire ENSEMBLE ! 🤝
+Je vais te guider colonne par colonne !
+Tu fais exactement ce que je te dis, d'accord ? 😊`);
+            
+            // Start guided mode after a delay
+            setTimeout(() => {
+                get().advanceGuidedStep();
+            }, FEEDBACK_DELAY);
+        } else if (choice === 'showSolution') {
+            // Option 3: Show solution animation
+            setShowSolutionAnimation(true);
+            set({ solutionAnimationStep: 0 });
+            
+            // Reset columns
+            const resetCols = columns.map(col => ({ ...col, value: 0 }));
+            set({ columns: resetCols });
+            
+            get().setFeedback(`D'accord ! 👀
+Je vais te MONTRER comment on fait !
+Regarde bien l'écran ! 👁️
+Tu vas VOIR comment se construit ce nombre !`);
+            
+            // Start animation
+            setTimeout(() => {
+                get().advanceSolutionAnimation();
+            }, FEEDBACK_DELAY);
+        }
+    },
+
+    // Advance to next step in guided mode
+    advanceGuidedStep: () => {
+        const { currentTarget, columns, guidedStep, setGuidedStep, setGuidedMode, resetAttempts, setFeedback } = get();
+        
+        const currentValues = [columns[0].value, columns[1].value, columns[2].value, columns[3].value];
+        const nextStep = getNextGuidedStep(currentTarget, currentValues);
+        
+        if (!nextStep) {
+            // Completed! Show success message
+            setGuidedMode(false);
+            resetAttempts();
+            const completionMsg = getGuidedCompletionMessage(currentTarget);
+            setFeedback(completionMsg);
+            
+            // Move to next challenge after delay
+            setTimeout(() => {
+                // This will be handled by the existing validation success flow
+                get().setConsecutiveFailures(0);
+                get().setTotalChallengesCompleted(get().totalChallengesCompleted + 1);
+            }, FEEDBACK_DELAY * 3);
+            
+            return;
+        }
+        
+        // Show the next step instruction
+        setFeedback(nextStep.message);
+        setGuidedStep(guidedStep + 1);
+    },
+
+    // Advance solution animation
+    advanceSolutionAnimation: () => {
+        const { currentTarget, columns, solutionAnimationStep, setSolutionAnimationStep, setColumns, setShowSolutionAnimation, setFeedback } = get();
+        
+        const decomp = decomposeNumber(currentTarget);
+        const targetArray = [decomp.units, decomp.tens, decomp.hundreds, decomp.thousands];
+        
+        // Animate from highest to lowest column
+        const animationOrder = [3, 2, 1, 0]; // thousands, hundreds, tens, units
+        const currentStep = solutionAnimationStep;
+        
+        if (currentStep === 0) {
+            setFeedback("On commence à ZÉRO !");
+            setSolutionAnimationStep(1);
+            setTimeout(() => get().advanceSolutionAnimation(), 1000);
+            return;
+        }
+        
+        const stepIndex = currentStep - 1;
+        if (stepIndex < 4) {
+            const columnIndex = animationOrder[stepIndex];
+            const targetValue = targetArray[columnIndex];
+            
+            // Update the column
+            const newCols = [...columns];
+            newCols[columnIndex] = { ...newCols[columnIndex], value: targetValue };
+            setColumns(newCols);
+            
+            // Calculate running total
+            const runningTotal = newCols.reduce((acc, col, idx) => acc + col.value * Math.pow(10, idx), 0);
+            
+            // Show step message
+            const stepMsg = getSolutionAnimationStep(columnIndex, targetValue, runningTotal);
+            setFeedback(stepMsg);
+            
+            setSolutionAnimationStep(currentStep + 1);
+            setTimeout(() => get().advanceSolutionAnimation(), 2000);
+        } else {
+            // Animation complete
+            setShowSolutionAnimation(false);
+            setFeedback(`Voilà ! C'est comme ça qu'on fait ${currentTarget} ! 🎯
+Tu as vu les étapes ? 👀
+
+Maintenant tu sais comment faire ! 💡
+Tu veux :
+
+[1] 🔄 Refaire ce nombre moi-même !
+[2] ➡️ Passer au suivant !`);
         }
     },
 
