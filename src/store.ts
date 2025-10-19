@@ -24,7 +24,8 @@ import {
     decomposeNumber,
     getNextGuidedStep,
     getGuidedCompletionMessage,
-    getSolutionAnimationStep
+    getSolutionAnimationStep,
+    getGuidedClickFeedback
 } from './feedbackSystem.ts';
 
 export const initialColumns: Column[] = [
@@ -1441,12 +1442,46 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleAdd: (idx: number) => {
-        const { isCountingAutomatically, isTransitioningToChallenge, phase, columns, addClicks, sequenceFeedback } = get();
+        const { isCountingAutomatically, isTransitioningToChallenge, phase, columns, addClicks, sequenceFeedback, guidedMode, currentTarget } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
 
         if (isCountingAutomatically || isTransitioningToChallenge) return;
 
         const isUnitsColumn = (i: number) => i === 0;
+        
+        // Handle guided mode - check if this is the correct column to click
+        if (guidedMode) {
+            const currentValues = [columns[0].value, columns[1].value, columns[2].value, columns[3].value];
+            const nextStep = getNextGuidedStep(currentTarget, currentValues);
+            
+            if (nextStep && nextStep.columnIndex === idx && nextStep.action === 'increase') {
+                // Correct click! Increment the column
+                const newCols = [...columns];
+                newCols[idx].value++;
+                set({ columns: newCols });
+                
+                // Check if this column is now complete
+                const updatedValues = [newCols[0].value, newCols[1].value, newCols[2].value, newCols[3].value];
+                const decomp = decomposeNumber(currentTarget);
+                const targetArray = [decomp.units, decomp.tens, decomp.hundreds, decomp.thousands];
+                
+                if (updatedValues[idx] === targetArray[idx]) {
+                    // Column complete! Move to next step
+                    setTimeout(() => {
+                        get().advanceGuidedStep();
+                    }, 500);
+                } else {
+                    // Show progress feedback
+                    const remaining = targetArray[idx] - updatedValues[idx];
+                    get().setFeedback(getGuidedClickFeedback(remaining));
+                }
+                return;
+            } else if (nextStep) {
+                // Wrong column or action
+                get().setFeedback(`Non, pas là ! 😊\nClique sur △ dans la colonne ${nextStep.columnName} !`);
+                return;
+            }
+        }
 
         // Handle new intro phases
         if (phase === 'intro-first-interaction') {
@@ -2197,13 +2232,51 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleSubtract: (idx: number) => {
-        const { isCountingAutomatically, phase, columns } = get();
+        const { isCountingAutomatically, phase, columns, guidedMode, currentTarget } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         const { sequenceFeedback, resetUnitChallenge } = get();
 
         if (isCountingAutomatically) return;
 
         const isUnitsColumn = (i: number) => i === 0;
+        
+        // Handle guided mode - check if this is the correct column to click
+        if (guidedMode) {
+            const currentValues = [columns[0].value, columns[1].value, columns[2].value, columns[3].value];
+            const nextStep = getNextGuidedStep(currentTarget, currentValues);
+            
+            if (nextStep && nextStep.columnIndex === idx && nextStep.action === 'decrease') {
+                // Correct click! Decrement the column
+                const newCols = [...columns];
+                newCols[idx].value--;
+                set({ columns: newCols });
+                
+                // Check if this column is now complete
+                const updatedValues = [newCols[0].value, newCols[1].value, newCols[2].value, newCols[3].value];
+                const decomp = decomposeNumber(currentTarget);
+                const targetArray = [decomp.units, decomp.tens, decomp.hundreds, decomp.thousands];
+                
+                if (updatedValues[idx] === targetArray[idx]) {
+                    // Column complete! Move to next step
+                    setTimeout(() => {
+                        get().advanceGuidedStep();
+                    }, 500);
+                } else {
+                    // Show progress feedback
+                    const remaining = targetArray[idx] - updatedValues[idx];
+                    get().setFeedback(getGuidedClickFeedback(Math.abs(remaining)));
+                }
+                return;
+            } else if (nextStep) {
+                // Wrong column or action
+                if (nextStep.action === 'increase') {
+                    get().setFeedback(`Non, il faut AUGMENTER cette colonne ! 😊\nClique sur △ dans la colonne ${nextStep.columnName} !`);
+                } else {
+                    get().setFeedback(`Non, pas là ! 😊\nClique sur ∇ dans la colonne ${nextStep.columnName} !`);
+                }
+                return;
+            }
+        }
 
         // Handle new intro phases
         if (phase === 'intro-discover-carry') {
