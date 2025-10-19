@@ -2464,13 +2464,16 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateTenToTwenty: () => {
-        const { phase, columns, tenToTwentyTargetIndex, tenToTwentySuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
+        const { phase, columns, tenToTwentyTargetIndex, tenToTwentySuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted, setCurrentTarget } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-ten-to-twenty') return;
 
         const challenge = TEN_TO_TWENTY_CHALLENGES[0];
         const targetNumber = challenge.targets[tenToTwentyTargetIndex];
+        
+        // Set current target for help system
+        setCurrentTarget(targetNumber);
 
         if (totalNumber === targetNumber) {
             // SUCCESS!
@@ -2642,13 +2645,16 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateHundredToTwoHundred: () => {
-        const { phase, columns, hundredToTwoHundredTargetIndex, hundredToTwoHundredSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
+        const { phase, columns, hundredToTwoHundredTargetIndex, hundredToTwoHundredSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted, setCurrentTarget } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-hundred-to-two-hundred') return;
 
         const challenge = HUNDRED_TO_TWO_HUNDRED_CHALLENGES[0];
         const targetNumber = challenge.targets[hundredToTwoHundredTargetIndex];
+        
+        // Set current target for help system
+        setCurrentTarget(targetNumber);
 
         if (totalNumber === targetNumber) {
             // SUCCESS!
@@ -2720,13 +2726,16 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateTwoHundredToThreeHundred: () => {
-        const { phase, columns, twoHundredToThreeHundredTargetIndex, twoHundredToThreeHundredSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
+        const { phase, columns, twoHundredToThreeHundredTargetIndex, twoHundredToThreeHundredSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted, setCurrentTarget } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-two-hundred-to-three-hundred') return;
 
         const challenge = TWO_HUNDRED_TO_THREE_HUNDRED_CHALLENGES[0];
         const targetNumber = challenge.targets[twoHundredToThreeHundredTargetIndex];
+        
+        // Set current target for help system
+        setCurrentTarget(targetNumber);
 
         if (totalNumber === targetNumber) {
             // SUCCESS!
@@ -2796,7 +2805,7 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateHundreds: () => {
-        const { phase, columns, hundredsTargetIndex, hundredsSuccessCount, sequenceFeedback, resetHundredsChallenge, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
+        const { phase, columns, hundredsTargetIndex, hundredsSuccessCount, sequenceFeedback, resetHundredsChallenge, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted, setCurrentTarget } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         const challengePhases = ['challenge-hundreds-1', 'challenge-hundreds-2', 'challenge-hundreds-3'] as const;
         const challengeIndex = challengePhases.indexOf(phase as typeof challengePhases[number]);
@@ -2804,6 +2813,9 @@ export const useStore = create<MachineState>((set, get) => ({
 
         const challenge = HUNDREDS_CHALLENGES[challengeIndex];
         const targetNumber = challenge.targets[hundredsTargetIndex];
+        
+        // Set current target for help system
+        setCurrentTarget(targetNumber);
 
         if (totalNumber === targetNumber) {
             // SUCCESS!
@@ -2892,13 +2904,16 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateThousandToTwoThousand: () => {
-        const { phase, columns, thousandToTwoThousandTargetIndex, thousandToTwoThousandSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
+        const { phase, columns, thousandToTwoThousandTargetIndex, thousandToTwoThousandSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted, setCurrentTarget } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-thousand-to-two-thousand') return;
 
         const challenge = THOUSAND_TO_TWO_THOUSAND_CHALLENGES[0];
         const targetNumber = challenge.targets[thousandToTwoThousandTargetIndex];
+        
+        // Set current target for help system
+        setCurrentTarget(targetNumber);
 
         if (totalNumber === targetNumber) {
             // SUCCESS!
@@ -2973,13 +2988,16 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateTwoThousandToThreeThousand: () => {
-        const { phase, columns, twoThousandToThreeThousandTargetIndex, twoThousandToThreeThousandSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
+        const { phase, columns, twoThousandToThreeThousandTargetIndex, twoThousandToThreeThousandSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted, setCurrentTarget } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-two-thousand-to-three-thousand') return;
 
         const challenge = TWO_THOUSAND_TO_THREE_THOUSAND_CHALLENGES[0];
         const targetNumber = challenge.targets[twoThousandToThreeThousandTargetIndex];
+        
+        // Set current target for help system
+        setCurrentTarget(targetNumber);
 
         if (totalNumber === targetNumber) {
             // SUCCESS!
@@ -3050,13 +3068,16 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateThousandsSimpleCombination: () => {
-        const { phase, columns, thousandsSimpleCombinationTargetIndex, thousandsSimpleCombinationSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
+        const { phase, columns, thousandsSimpleCombinationTargetIndex, thousandsSimpleCombinationSuccessCount, sequenceFeedback, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted, setCurrentTarget } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         
         if (phase !== 'challenge-thousands-simple-combination') return;
 
         const challenge = THOUSANDS_SIMPLE_COMBINATION_CHALLENGES[0];
         const targetNumber = challenge.targets[thousandsSimpleCombinationTargetIndex];
+        
+        // Set current target for help system
+        setCurrentTarget(targetNumber);
 
         if (totalNumber === targetNumber) {
             // SUCCESS!
@@ -3127,7 +3148,7 @@ export const useStore = create<MachineState>((set, get) => ({
     },
 
     handleValidateThousands: () => {
-        const { phase, columns, thousandsTargetIndex, thousandsSuccessCount, sequenceFeedback, resetThousandsChallenge, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted } = get();
+        const { phase, columns, thousandsTargetIndex, thousandsSuccessCount, sequenceFeedback, resetThousandsChallenge, attemptCount, consecutiveFailures, resetAttempts, setAttemptCount, setConsecutiveFailures, setShowHelpOptions, totalChallengesCompleted, setTotalChallengesCompleted, setCurrentTarget } = get();
         const totalNumber = columns.reduce((acc: number, col: Column, idx: number) => acc + col.value * Math.pow(10, idx), 0);
         const challengePhases = ['challenge-thousands-1', 'challenge-thousands-2', 'challenge-thousands-3'] as const;
         const challengeIndex = challengePhases.indexOf(phase as typeof challengePhases[number]);
@@ -3135,6 +3156,9 @@ export const useStore = create<MachineState>((set, get) => ({
 
         const challenge = THOUSANDS_CHALLENGES[challengeIndex];
         const targetNumber = challenge.targets[thousandsTargetIndex];
+        
+        // Set current target for help system
+        setCurrentTarget(targetNumber);
 
         if (totalNumber === targetNumber) {
             // SUCCESS!
