@@ -174,6 +174,11 @@ export interface MachineState {
   guidedMode: boolean;
   guidedStep: number;
   totalChallengesCompleted: number;
+  helpChoice: 'tryAgain' | 'guided' | 'showSolution' | null;
+  showSolutionAnimation: boolean;
+  solutionAnimationStep: number;
+  currentTarget: number;
+  lastFeedbackMessage: string;
 
   // Personalization and intro state
   userName: string;
@@ -212,6 +217,14 @@ export interface MachineState {
     setGuidedMode: (guided: boolean) => void;
     setGuidedStep: (step: number) => void;
     setTotalChallengesCompleted: (count: number) => void;
+    setHelpChoice: (choice: 'tryAgain' | 'guided' | 'showSolution' | null) => void;
+    setShowSolutionAnimation: (show: boolean) => void;
+    setSolutionAnimationStep: (step: number) => void;
+    setCurrentTarget: (target: number) => void;
+    setLastFeedbackMessage: (message: string) => void;
+    handleHelpChoice: (choice: 'tryAgain' | 'guided' | 'showSolution') => void;
+    advanceGuidedStep: () => void;
+    advanceSolutionAnimation: () => void;
     resetAttempts: () => void;
     setUserName: (name: string) => void;
     setIntroClickCount: (count: number) => void;

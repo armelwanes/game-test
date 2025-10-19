@@ -48,6 +48,10 @@ function MachineANombres() {
     attemptCount,
     showHelpOptions,
     totalChallengesCompleted,
+    handleHelpChoice,
+    guidedMode,
+    showSolutionAnimation,
+    currentTarget,
     // New intro state
     showResponseButtons,
     setSelectedResponse,
@@ -1050,14 +1054,11 @@ function MachineANombres() {
             border: '2px solid #fbbf24'
           }}>
             <p style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 'bold', color: '#92400e', textAlign: 'center' }}>
-              Choisis comment tu veux continuer :
+              Comment veux-tu continuer ? 🤔
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button
-                onClick={() => {
-                  useStore.getState().setShowHelpOptions(false);
-                  useStore.getState().setFeedback("D'accord champion ! Dernier essai ! 🎯 Rappelle-toi les indices !");
-                }}
+                onClick={() => handleHelpChoice('tryAgain')}
                 style={{
                   fontSize: 14,
                   padding: '10px 16px',
@@ -1067,18 +1068,20 @@ function MachineANombres() {
                   borderRadius: 6,
                   cursor: 'pointer',
                   fontWeight: 'bold',
-                  boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)'
+                  boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
                 💪 Essayer encore tout seul !
               </button>
               <button
-                onClick={() => {
-                  useStore.getState().setShowHelpOptions(false);
-                  useStore.getState().setGuidedMode(true);
-                  useStore.getState().setGuidedStep(0);
-                  useStore.getState().setFeedback("Super ! Je vais t'aider colonne par colonne ! 🤝 Commence par les MILLIERS...");
-                }}
+                onClick={() => handleHelpChoice('guided')}
                 style={{
                   fontSize: 14,
                   padding: '10px 16px',
@@ -1088,48 +1091,20 @@ function MachineANombres() {
                   borderRadius: 6,
                   cursor: 'pointer',
                   fontWeight: 'bold',
-                  boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)'
+                  boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
                 🤝 Aide-moi à le faire !
               </button>
               <button
-                onClick={() => {
-                  const { columns } = useStore.getState();
-                  let targetNumber = 0;
-                  
-                  // Get the current target based on phase
-                  if (phase.startsWith('challenge-unit-')) {
-                    const challengeIndex = ['challenge-unit-1', 'challenge-unit-2', 'challenge-unit-3'].indexOf(phase);
-                    targetNumber = UNIT_CHALLENGES[challengeIndex].targets[unitTargetIndex];
-                  } else if (phase.startsWith('challenge-tens-')) {
-                    const challengeIndex = ['challenge-tens-1', 'challenge-tens-2', 'challenge-tens-3'].indexOf(phase);
-                    targetNumber = TENS_CHALLENGES[challengeIndex].targets[tensTargetIndex];
-                  } else if (phase.startsWith('challenge-hundreds-')) {
-                    const challengeIndex = ['challenge-hundreds-1', 'challenge-hundreds-2', 'challenge-hundreds-3'].indexOf(phase);
-                    targetNumber = HUNDREDS_CHALLENGES[challengeIndex].targets[hundredsTargetIndex];
-                  } else if (phase.startsWith('challenge-thousands-')) {
-                    const challengeIndex = ['challenge-thousands-1', 'challenge-thousands-2', 'challenge-thousands-3'].indexOf(phase);
-                    targetNumber = THOUSANDS_CHALLENGES[challengeIndex].targets[thousandsTargetIndex];
-                  }
-                  
-                  // Decompose and show
-                  const thousands = Math.floor(targetNumber / 1000);
-                  const hundreds = Math.floor((targetNumber % 1000) / 100);
-                  const tens = Math.floor((targetNumber % 100) / 10);
-                  const units = targetNumber % 10;
-                  
-                  // Build the new columns with the target values
-                  const newCols = [...columns];
-                  newCols[3].value = thousands;
-                  newCols[2].value = hundreds;
-                  newCols[1].value = tens;
-                  newCols[0].value = units;
-                  
-                  useStore.getState().setColumns(newCols);
-                  useStore.getState().setShowHelpOptions(false);
-                  useStore.getState().setFeedback(`Voilà ! C'est comme ça qu'on fait ${targetNumber} ! 🎯 Observe bien ! Maintenant tu sais ! 👀`);
-                }}
+                onClick={() => handleHelpChoice('showSolution')}
                 style={{
                   fontSize: 14,
                   padding: '10px 16px',
@@ -1139,7 +1114,14 @@ function MachineANombres() {
                   borderRadius: 6,
                   cursor: 'pointer',
                   fontWeight: 'bold',
-                  boxShadow: '0 2px 4px rgba(139, 92, 246, 0.3)'
+                  boxShadow: '0 2px 4px rgba(139, 92, 246, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
                 👀 Montre-moi la solution !
@@ -1162,6 +1144,40 @@ function MachineANombres() {
             boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)'
           }}>
             🌟 {totalChallengesCompleted} défi{totalChallengesCompleted > 1 ? 's' : ''} réussi{totalChallengesCompleted > 1 ? 's' : ''} ! Continue ! 💪
+          </div>
+        )}
+        
+        {/* Guided mode indicator */}
+        {guidedMode && (
+          <div style={{
+            marginTop: 12,
+            padding: '8px 12px',
+            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            borderRadius: 6,
+            textAlign: 'center',
+            fontSize: 13,
+            fontWeight: 'bold',
+            color: '#fff',
+            boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)'
+          }}>
+            🤝 Mode guidé actif - Suis les instructions !
+          </div>
+        )}
+        
+        {/* Solution animation indicator */}
+        {showSolutionAnimation && (
+          <div style={{
+            marginTop: 12,
+            padding: '8px 12px',
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+            borderRadius: 6,
+            textAlign: 'center',
+            fontSize: 13,
+            fontWeight: 'bold',
+            color: '#fff',
+            boxShadow: '0 2px 4px rgba(139, 92, 246, 0.3)'
+          }}>
+            👀 Regarde bien comment on construit le nombre {currentTarget} !
           </div>
         )}
       </div>
